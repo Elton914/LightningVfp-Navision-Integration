@@ -1,0 +1,269 @@
+<aura:component controller="ProductWizardController" implements="force:appHostable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes,force:lightningQuickAction"  >
+    <aura:attribute name="recordLoadError" type="String"/>
+    <aura:attribute name="sObjectName" type="String" />
+    <aura:attribute name="opportunityRecord" type="Opportunity" default="{ 'sobjectType': 'Opportunity','Pricebook2Id':''}" />
+    <aura:attribute name="recordId" type="String" />
+    <aura:attribute name="sline" type="String" /> 
+    <aura:attribute name="stype" type="String" />
+    <aura:attribute name="searchVar" type="String" />
+    <aura:attribute name="serviceLine" type="Product2[]" />
+    <aura:attribute name="oliList" type="OpportunityLineItem[]" />
+    <aura:attribute name="oliFullList" type="OpportunityLineItem[]" />
+    <aura:attribute name="serviceTypes" type="Product2[]" />
+    <aura:attribute name="showSpinner" type="Boolean" default="false" />
+    
+    <aura:attribute name="allProducts" type="list"/>
+    <aura:attribute name="pricebooks" type="list"/>
+    <aura:attribute name="oliWrapperFullList" type="list"/>
+    <aura:attribute name="oliWrapperPaginated" type="list"/>
+    
+    <aura:attribute name="pageSize" type="Integer" default="5" />
+    <aura:attribute name="totalSize" type="Integer"/>
+    <aura:attribute name="start" type="Integer" />
+    <aura:attribute name="end" type="Integer"/>
+    
+    
+    
+    <aura:attribute name="selectedPricebook" type="String"/>
+    <aura:attribute name="record" type="Object"  description="The record object to be displayed"/>
+    <force:recordData aura:id="recordLoader"
+                      recordId="{!v.recordId}"
+                      fields="Id,AccountId,Name,CurrencyIsoCode,Pricebook2Id,StageName,Probability"
+                      targetFields="{!v.opportunityRecord}"
+                      targetError="{!v.recordLoadError}"
+                      layoutType="FULL"
+                      recordUpdated="{!c.existingOpportunity}"
+                      />
+    
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+    
+    
+    
+    <aura:if isTrue="{! v.showSpinner }">           
+        <lightning:spinner alternativeText="Loading" />
+    </aura:if>
+    
+    <aura:if isTrue="{!or(v.opportunityRecord.StageName == 'Proposal Submitted For Approval',v.opportunityRecord.Price_Updated__c)}">
+        
+        <ui:message title="Warning" severity="warning" closable="true">
+            The Opportunity is locked and is awaiting approval.Please Contact Your Manager.
+        </ui:message>
+        
+        
+        <aura:set attribute="else">
+            
+            <div class="slds-table--header-fixed_container" >
+                {!v.recordLoadError}
+                <div class="slds-scrollable_y" style="height:100%;">
+                    
+                    
+                    
+                    <table class="slds-table slds-table--bordered slds-table--striped slds-table--header-fixed">
+                        
+                        <colgroup>
+                            <col span="1" style="width: 2.5%;"/>
+                            <col span="1" style="width: 15%;"/>
+                            <col span="1" style="width: 15%;"/>
+                            <col span="1" style="width: 10%;"/>
+                            <col span="1" style="width: 10%;"/>
+                             <col span="1" style="width:17.5%;"/>
+                            <col span="1" style="width: 5%;"/>
+                            <col span="1" style="width: 5%;"/>
+                            <col span="1" style="width: 5%;"/>
+                            <col span="1" style="width: 5%;"/>
+                            <col span="1" style="width: 10%;"/>
+                           
+                        </colgroup>
+                        
+                        
+                        
+                        
+                        <thead class=" slds-table--header-fixed" style="text-align:center">
+                            
+                            <tr class="slds-text-heading--label centerText "> 
+                                <td colspan="3">
+                                    <lightning:select aura:id="servicelinepicklist1" label="Product" name="productType" onchange="{!c.servicelinepicklineChange}">
+                                        <option value="" text="- None -" /> 
+                                        <aura:iteration items="{!v.serviceLine}" var="per">
+                                            <option value="{!per}" text="{!per}" />  
+                                        </aura:iteration>
+                                    </lightning:select>                            
+                                </td>
+                                
+                                <td colspan="4">
+                                    <lightning:select aura:id="servicelinepicklist" label="Service Type" name="serviceLine" onchange="{!c.servicetypepicklineChange}">
+                                        <option value="" text="- None -" /> 
+                                        <aura:iteration items="{!v.serviceTypes}" var="per">
+                                            <option value="{!per}" text="{!per}" />  
+                                        </aura:iteration>
+                                    </lightning:select>
+                                    
+                                </td>
+                                
+                                <td colspan="4">           
+                                    <lightning:input aura:id="searchProductName" label="Filter Products" value="{!v.searchVar}" placeholder="Search..." onchange="{!c.searchTypeProducts }"  />
+                                </td>
+                            </tr>  
+                            
+                            <tr class="slds-text-heading--label centerText col-lg-12" >
+                                
+                                <th scope="col"><div class="slds-truncate col-lg-3">Select</div></th>
+                                <th scope="col"><div class="slds-truncate col-lg-3" >Service Charge</div></th>
+                                <th scope="col"><div class="slds-truncate col-lg-3" >Product</div></th>
+                                <th scope="col"><div class="slds-truncate col-lg-3" >Service Type</div></th>
+                                <th scope="col"><div class="slds-truncate col-lg-3" >Product<br/> Description</div></th>
+                                <th scope="col"><div class="slds-truncate col-lg-3" >Charge<br/> Description</div></th>
+                                <th scope="col"><div class="slds-truncate col-lg-3" >Price</div></th>
+                                <th scope="col"><div class="slds-truncate col-lg-3" >Cost</div></th>
+                                <th scope="col"><div class="slds-truncate " >VAT?</div></th>
+                                <th scope="col"><div class="slds-truncate col-lg-3"  >Quantity</div></th>
+                                <th scope="col"><div class="slds-truncate col-lg-3" >Measure</div></th>
+                                 
+                                
+                            </tr>
+                        </thead>
+                        <tbody  >
+                            <aura:iteration  items="{!v.oliWrapperPaginated}" var="row"  indexVar="index" >
+                                
+                                <tr class="col-lg-12" >                          
+                                    <td scope="col">
+                                        <div class="slds-truncate"> 
+                                            <lightning:input type="checkbox" aura:id="checkbox" checked="{!row.isSelected}" />
+                                        </div></td>
+                                    <td scope="col" style="width:5%">
+                                        <div class="slds-truncate" > 
+                                            {!row.pbe.Product2.Name}
+                                        </div>
+                                    </td>
+                                    <td scope="col">
+                                        <div class="slds-truncate" >
+                                        
+                                        {!row.pbe.Product2.Family}
+                                        </div>
+                                    </td>
+                                    <td scope="col">
+                                        <div class="slds-truncate" >
+                                        
+                                        {!row.pbe.Product2.Service_Type__c}
+                                        </div>
+                                    </td>
+                                    
+                                    <td scope="col">
+                                        <div class="slds-truncate" > {!row.pbe.Product2.Description} </div>
+                                    </td>
+                                     <td scope="col"><div class="slds-truncate" >
+                                       <lightning:textarea placeholder="Enter service charge comments" value="{!row.oli.Description}"  />
+                                        </div>
+                                    </td>
+                                    <td scope="col">
+                                        <div class="slds-truncate" >
+                                            <ui:inputCurrency aura:id="amount"  class="field" value="{!row.oli.UnitPrice}"  updateOn="keyup"/>
+                                        </div>
+                                    </td>
+                                    <td scope="col">
+                                        <div class="slds-truncate" >
+                                            <ui:inputCurrency aura:id="cost" placeholder="0.00" class="field" value="{!row.oli.Cost__c}" updateOn="keyup"/>
+                                        </div>
+                                    </td>
+                                    <td scope="col"><div class="slds-truncate" >
+                                        <lightning:input type="checkbox" aura:id="checkbox2" value="{!row.oli.VAT__c}" onchange="{!c.onCheckVat}" />
+                                        </div></td>
+                                    <td scope="col"><div class="slds-truncate" >
+                                        <lightning:input type="number" placeholder="0" value="{!row.oli.Quantity}"  />
+                                        </div>
+                                    </td>
+                                    <td scope="col">
+                                        <div class="slds-truncate slds-cell-wrap" > {!row.pbe.Product2.QuantityUnitOfMeasure} </div>
+                                    </td>
+                                    
+                                </tr> 
+                                
+                            </aura:iteration>
+                        </tbody>
+                    </table>
+                    <div class="slds-align_absolute-center" style="height:2rem">
+                        <lightning:button label="First" disabled="{!v.start == 0}"  onclick="{!c.first}" />
+                        <lightning:button label="Previous" disabled="{!v.start == 0}"  onclick="{!c.previous}" />
+                        <lightning:button label="Next" disabled="{!v.end >= v.totalSize}" onclick="{!c.next}" />
+                        <lightning:button label="Last" disabled="{!v.end >= v.totalSize}" onclick="{!c.last}" />
+                    </div>
+                    <br/>
+                    
+                    <!--  </aura:if>-->
+                    
+                </div>
+                
+            </div>
+            <div class="slds-align_absolute-center" style="height:2rem">
+                <lightning:button variant="brand"  label="Save" title="Brand action" onclick="{! c.saveProductControllers}" />
+                
+                <lightning:button variant="brand"  label="Finish adding Products" title="Brand action" onclick="{! c.refresh}" />
+            </div>
+        </aura:set>
+    </aura:if>
+    
+    <!--            **************************SAVED PRODUCTS ***************************************          --> 
+    <br/>
+    <br/>
+    <h2 id="element-with-table-label" class="slds-text-heading_medium slds-m-bottom_xx-small slds-align_absolute-center" aria-labelledby="element-with-table-label other-element-with-table-label">SAVED PRODUCTS</h2><br/>
+    <table class="slds-table slds-table--bordered slds-table--striped slds-table--header-fixed">
+      
+                <col span="1" style="width: 15%;"/>
+                <col span="1" style="width: 15%;"/>
+                <col span="1" style="width: 15%;"/>
+                <col span="1" style="width: 10%;"/>
+                <col span="1" style="width: 10%;"/>
+                <col span="1" style="width: 10%;"/>
+                <col span="1" style="width: 10%;"/>
+                <col span="1" style="width: 15%;"/>
+             
+        <thead class=" slds-table--header-fixed" style="text-align:center"> 
+            <tr class="slds-text-heading--label centerText col-lg-12" >
+                <th scope="col"><div class="slds-truncate col-lg-3" >Service Charge</div></th>
+                <th scope="col"><div class="slds-truncate col-lg-3" >Product<br/> Description</div></th> 
+                <th scope="col"><div class="slds-truncate col-lg-3" >Charge<br/> Description</div></th> 
+                <!--      <th scope="col"><div class="slds-truncate col-lg-3" >Service Line</div></th>-->
+                <th scope="col"><div class="slds-truncate col-lg-3" > &nbsp; Price</div></th>
+                <th scope="col"><div class="slds-truncate col-lg-3" >Cost</div></th>
+                <th scope="col"><div class="slds-truncate col-lg-3" >VAT?</div></th>
+                <th scope="col"><div class="slds-truncate col-lg-3"  >Quantity</div></th>
+                <th scope="col"><div class="slds-truncate col-lg-3" >&nbsp; Measure</div></th> 
+             </tr>
+        </thead>
+        <tbody  >
+            <aura:iteration  items="{!v.oliList}" var="row"  indexVar="index" >
+                <tr class="col-lg-12" >
+                    <td scope="col" >
+                        <div class="slds-truncate" > <ui:outputText value="{!row.Product2.Name}"/></div>
+                    </td>
+                    <td scope="col">
+                        <div class="slds-truncate slds-cell-wrap" > <ui:outputText value="{!row.Product2.Description}"/>                                     
+                        </div>
+                    </td>   
+                    <td scope="col">
+                        <div class="slds-truncate slds-cell-wrap" ><ui:outputTextArea  value="{!row.Description}"/>                                        
+                        </div>
+                    </td>   
+                    <td scope="col">
+                        <div class="slds-truncate" ><ui:outputCurrency value="{!row.UnitPrice}"/></div>
+                    </td>
+                    <td scope="col">
+                        <div class="slds-truncate" ><ui:outputCurrency value="{!row.Cost__c}"/></div>
+                    </td>
+                    <td scope="col">
+                        <div class="slds-truncate" ><ui:outputCheckbox aura:id="output" value="{!row.VAT__c}"/></div>
+                    </td>
+                    <td scope="col">
+                        <div class="slds-truncate" ><ui:outputNumber  value="{!row.Quantity}"/></div>
+                    </td>
+                    <td scope="col">
+                        <div class="slds-truncate slds-cell-wrap" ><ui:outputText value="{!row.Product2.QuantityUnitOfMeasure}"/>                                       
+                        </div>
+                    </td>
+                    
+                </tr>                         
+            </aura:iteration>
+        </tbody>
+    </table><br/>
+    
+</aura:component>

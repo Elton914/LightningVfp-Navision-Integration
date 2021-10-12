@@ -1,0 +1,361 @@
+<aura:component access="GLOBAL" controller="generateProposalController" implements="force:appHostable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes,force:lightningQuickAction,lightning:availableForFlowScreens"  >
+    <aura:attribute name="recordId" type="String" />
+    <aura:attribute name="accountId" type="String" />
+    <aura:attribute name="opportunityLineItems" type="list"/>
+    <aura:attribute name="templates" type="list"/>
+    <aura:attribute name="canNext" type="Boolean" default="false"/>
+    <aura:attribute name="canBack" type="Boolean" default="false"/>
+    <aura:attribute name="hideNextSaveDocument" type="Boolean" default="false"/>
+    <aura:attribute name="hideNextSaveRemarks" type="Boolean" default="false"/>
+    <aura:attribute name="letterHeadSelected" type="Boolean" default="false"/>
+    <aura:attribute name="opportunityRecord" type="Object"/>
+    <aura:attribute name="opportunityDetails" type="map"/>
+    <aura:attribute name="options" type="List" default=""/>
+    <aura:attribute name="remarksFamily" type="List" default=""/>
+    <aura:attribute name="typeDocument" type="String" default=""/>
+    <aura:attribute name="selectedTab" type="String" default="Documents"/>
+    <aura:attribute name="selectedFamilyTab" type="String" />
+    <aura:attribute name="selectedDocDetails" type="Sobject" />
+    <aura:attribute name="loadingSpinner" type="Boolean" default="false"/>
+    <aura:attribute name="isSendMail" type="boolean" default="false"/>
+    <aura:attribute name="email" type="string"/>
+    <aura:attribute name="ccEmail" type="string"/>
+   	<aura:attribute name="subject" type="string"/>
+   	<aura:attribute name="body" type="string"/>
+    <aura:attribute name="pryContact" type="String" />
+    <aura:attribute name="Attachments" type="list" /> 
+     <aura:attribute name="letterHeadValue" type="string"/>
+    <aura:attribute name="reloadPreview" type="boolean" default="false"/>
+    <aura:attribute name="productFamilyToRemarksMap" type="Map" />
+    <aura:attribute name="letterhead" type="List" default="[
+    {'label': 'Mitchell Cotts Kenya', 'value': 'option1'},
+    {'label': 'Mitchell Cotts Rwanda', 'value': 'option2'},
+    {'label': 'Upstream Uganda', 'value': 'option3'},
+    {'label': 'Seven Stars', 'value': 'option4'}                                                    
+    ]"/>
+    
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/> 
+     
+    
+      <force:recordData aura:id="recordLoader"
+    recordId="{!v.recordId}"
+    fields="Id,Name,AccountId,Proposal_Approved__c,StageName,Price_Updated__c,Probability"
+    targetFields="{!v.opportunityRecord}"
+    targetError="{!v.recordLoadError}"
+    />
+    
+    <lightning:tabset variant="scoped" selectedTabId="{!v.selectedTab}">
+        <aura:if isTrue="{!or(v.opportunityRecord.StageName == 'Proposal Submitted For Approval',v.opportunityRecord.Price_Updated__c)}">
+            
+          <ui:message title="Warning" severity="warning" closable="true">
+                The Opportunity is locked and is awaiting approval.Please Contact Your Manager.
+                </ui:message>
+            
+       
+        <aura:set attribute="else">
+        
+        <lightning:tab label="Documents" id="Documents">
+            <div class="slds-grid slds-gutters">
+                <div class="slds-col">
+                    <lightning:radioGroup name="radiogroup"
+                                          label="Select Document to be generated"
+                                          options="{! v.options }"
+                                          value="{! v.typeDocument }"
+                                          type="radio"
+                                          onchange="{!c.changeType}" /> 
+                <br></br>
+                <br></br>
+                </div>
+            </div>
+            <aura:if isTrue="{!not(empty(v.typeDocument))}">
+                <div class="slds-grid slds-gutters">
+                    <div class="slds-col">
+                        <div class="slds-float_right">
+                            <lightning:button label="Next" name="Template" iconName="utility:forward" iconPosition="right"  variant="brand" onclick="{!c.next}" />
+                        </div>
+                    </div>
+                </div>
+            </aura:if>
+        </lightning:tab>
+      
+        
+        
+        <aura:if isTrue="{!and(not(empty(v.typeDocument)),not(empty(v.templates)))}">
+            <lightning:tab label="Templates" id="Template">
+                <aura:iteration  items="{!v.templates}" var="row"  indexVar="index" >
+                    <tr class="col-lg-12" >
+                        <td scope="col">
+                            <div class="slds-truncate" >
+                                <aura:if isTrue="{!equals(v.typeDocument,row.Name)}">
+                                 <aura:if isTrue="{!not(empty(row.Salutation__c))}">
+                                        <div class="slds-grid slds-gutters">
+                                            <div class="slds-col">
+                                                <lightning:input value="{!row.Salutation__c}" />
+                                            </div>
+                                        </div>
+                                    </aura:if>
+                                    <aura:if isTrue="{!not(empty(row.Ref__c))}">
+                                        <div class="slds-grid slds-gutters">
+                                            <div class="slds-col">
+                                                <lightning:inputRichText value="{!row.Ref__c}" />
+                                            </div>
+                                        </div>
+                                    </aura:if>
+                                    <aura:if isTrue="{!not(empty(row.Ref__c))}">
+                                        <div class="slds-grid slds-gutters">
+                                            <div class="slds-col">
+                                                <lightning:inputRichText value="{!row.Cargo_Details__c}" />
+                                            </div>
+                                        </div>
+                                    </aura:if>
+                                    <aura:if isTrue="{!not(empty(row.Content__c))}">
+                                        <div class="slds-grid slds-gutters">
+                                            <div class="slds-col">
+                                                <lightning:inputRichText value="{!row.Content__c}" />
+                                            </div>
+                                        </div>
+                                    </aura:if>
+                                </aura:if>
+                            </div>
+                        </td>
+                    </tr>
+                </aura:iteration>
+                <br />
+                <div class="slds-grid slds-gutters">
+                    <div class="slds-col">
+                        <div class="slds-float_right">
+                        <!--  <lightning:button label="{!'Save '+v.typeDocument}" variant="brand" onclick="{!c.createDocument}" /> -->
+                       </div>
+                    </div>
+                </div>
+                <br />
+                <div class="slds-grid slds-gutters">
+                    <div class="slds-col">
+                        <div class="slds-float_left">
+                         <lightning:button label="Previous" name="Documents" iconName="utility:back" iconPosition="left"  variant="brand" onclick="{!c.previous}" />
+                       </div>
+                    </div>
+                    
+                    <div class="slds-col">
+                        <div class="slds-float_right">
+                                <lightning:button label="{!'Save '+v.typeDocument}" variant="brand" onclick="{!c.createDocument}" />
+                    <aura:if isTrue="{!v.hideNextSaveDocument}">
+                            <lightning:button label="Next" name="Remarks" iconName="utility:forward" iconPosition="right"  variant="brand" onclick="{!c.next}" />
+                        </aura:if> 
+                        </div>
+                    </div>
+                      
+                </div>
+            </lightning:tab>
+            <lightning:tab label="Remarks" id="Remarks" onactive="{!c.fetchFamily}">
+                <lightning:tabset variant="scoped" selectedTabId="{!v.selectedFamilyTab}">
+                    <aura:iteration  items="{!v.remarksFamily}" var="remarks"  indexVar="index" >
+                        <lightning:tab label="{!remarks.Name+' Remarks'}" id="{!remarks.Name}">
+                            <div class="slds-grid slds-gutters">
+                                <div class="slds-col">
+                                    <lightning:inputRichText label="Remarks" value="{!remarks.Remarks__c}" />
+                                </div>
+                            </div>
+                            <br />
+                            
+                            <div class="slds-grid slds-gutters">
+                                
+                                <aura:if isTrue="{!and(greaterthan(index,0),greaterthan(v.remarksFamily.length,0))}">
+                                    <div class="slds-col">
+                                        <div class="slds-float_left">
+                                            <lightning:button label="Previous Product" name="{!index}" iconName="utility:back" iconPosition="left"  variant="brand" onclick="{!c.previousFamily}" />
+                                        </div>
+                                    </div>
+                                </aura:if>
+                                <aura:if isTrue="{!greaterthan(v.remarksFamily.length, 1)}">
+                                    <div class="slds-col">
+                                        <div class="slds-float_right">
+                                            <lightning:button label="Next Product" name="{!index}" iconName="utility:forward" iconPosition="right"  variant="brand" onclick="{!c.nextFamily}" />
+                                        </div>
+                                    </div>
+                                </aura:if>
+                            </div>
+                        </lightning:tab>
+                    </aura:iteration>
+                </lightning:tabset>
+                <br/>
+                <div class="slds-grid slds-gutters">
+                    <div class="slds-col">
+                        <div class="slds-float_right">
+                       <!--     <lightning:button label="Save Remarks"   variant="brand" onclick="{!c.createRemarks}" />-->
+                        </div>
+                    </div>
+                </div>
+                <br />
+                <div class="slds-grid slds-gutters">
+                    <div class="slds-col">
+                        <div class="slds-float_left">
+                            <lightning:button label="Previous" name="Template" iconName="utility:back" iconPosition="left"  variant="brand" onclick="{!c.previous}" />
+                        </div>
+                    </div>
+                   ">
+                    <div class="slds-col">
+                        <div class="slds-float_right">
+                             <lightning:button label="Save Remarks"   variant="brand" onclick="{!c.createRemarks}" />
+                             <aura:if isTrue="{!v.hideNextSaveRemarks}">
+                            <lightning:button label="Next" name="Letter Head" iconName="utility:forward" iconPosition="right"   variant="brand" onclick="{!c.next}" />
+                            </aura:if>                                                                                                                                        
+                        </div>
+                    </div>
+                      
+                </div>
+            </lightning:tab>
+            <lightning:tab label="Letter Head" id="Letter Head" onactive="">
+                
+                <lightning:radioGroup name="radioGroupRequired"
+                          label="Select Letter Head to be used"
+                          options="{! v.letterhead }"
+                          value="{!v.letterHeadValue }"
+                          type="radio"
+                          onchange="{!c.changeLetterhead}"   
+                          required="true"/>
+                
+                <br></br>
+                
+                      <div class="slds-grid slds-gutters">
+                    <div class="slds-col">
+                        <div class="slds-float_left">
+                            <lightning:button label="Previous" name="Remarks" iconName="utility:back" iconPosition="left"  variant="brand" onclick="{!c.previous}" />
+                        </div>
+                    </div>
+                <aura:if isTrue="{!v.letterHeadSelected}">   
+                          <div class="slds-col">
+                        <div class="slds-float_right">
+                            <lightning:button label="Next" name="Preview" iconName="utility:forward" iconPosition="right"  variant="brand" onclick="{!c.next}" />
+                        </div>
+                    </div>
+                          </aura:if>
+                </div>  
+                
+            </lightning:tab>
+            <lightning:tab label="Document Preview" id="Preview">
+                <div class="slds-grid slds-gutters">
+                    <div class="slds-col">
+                        <aura:if isTrue="{!v.reloadPreview}">
+                            <aura:if isTrue="{!and(equals(v.typeDocument,'Proposal'),not(equals(v.selectedDocDetails.Id)))}">
+                                <iframe id="iframeid"  aura:id="vfFrame" src="{! '/apex/proposalPDF?ID=' + v.selectedDocDetails.Id + '&amp;letterHeadValue=' + v.letterHeadValue}" class="myiframe" style="height: 100vh; width: 100%;" frameborder="0"/>
+                            </aura:if>
+                            <aura:if isTrue="{!and(equals(v.typeDocument,'SOP'),not(equals(v.selectedDocDetails.Id)))}">
+                                <iframe id="iframeid"  aura:id="vfFrame" src="{! '/apex/sopPDF?ID=' + v.selectedDocDetails.Id  + '&amp;letterHeadValue=' + v.letterHeadValue}" class="myiframe" style="height: 100vh; width: 100%;" frameborder="0"/>
+                            </aura:if>
+                            <aura:if isTrue="{!and(equals(v.typeDocument,'Quote'),not(equals(v.selectedDocDetails.Id)))}">
+                                <iframe id="iframeid"  aura:id="vfFrame" src="{! '/apex/quotePDF?ID=' + v.selectedDocDetails.Id  + '&amp;letterHeadValue=' + v.letterHeadValue}" class="myiframe" style="height: 100vh; width: 100%;" frameborder="0"/>
+                            </aura:if>
+                            <aura:if isTrue="{!and(equals(v.typeDocument,'Contract'),not(equals(v.selectedDocDetails.Id)))}">
+                                <iframe id="iframeid"  aura:id="vfFrame" src="{! '/apex/contractPDF?ID=' + v.selectedDocDetails.Id  + '&amp;letterHeadValue=' + v.letterHeadValue}" class="myiframe" style="height: 100vh; width: 100%;" frameborder="0"/>
+                            </aura:if>
+                        </aura:if>
+                    </div>
+                </div>
+                <br />
+                <div class="slds-grid slds-gutters">
+                    <div class="slds-col">
+                        <div class="slds-float_left">
+                            <lightning:button label="Previous" name="Letter Head" iconName="utility:back" iconPosition="left"  variant="brand" onclick="{!c.previous}" />
+                        </div>
+                    </div>
+                   
+                    <aura:if isTrue="{!and(v.opportunityRecord.Proposal_Approved__c,v.opportunityRecord.Price_Updated__c=='false')}">
+                    <div class="slds-col">
+                        <div class="slds-float_right">
+                           <lightning:button label="Save And Email" name="Email" variant="brand" onclick="{!c.saveEmailAttachement}" />
+                         <!--   <lightning:button label="Save Document"  variant="brand" onclick="{!c.saveAttachement}" />-->
+                        </div>
+                    </div>
+                        
+                        <aura:set attribute="else">
+                            <div class="slds-col">
+                                        <lightning:button label="Save &amp; Submit "  variant="brand" onclick="{!c.saveAttachement}" />        
+                                     <!-- <lightning:button label="Submit for Approval"  variant="brand" onclick="{!c.submitApproval}" />-->
+                           </div>
+                            </aura:set>
+                        
+                    </aura:if>
+                    
+                </div>
+            </lightning:tab>
+            <!--  <aura:if isTrue="{!v.isSendMail}"> -->
+            <aura:if isTrue="{!and(v.opportunityRecord.Proposal_Approved__c,v.opportunityRecord.Price_Updated__c=='false')}">
+                <lightning:tab label="Email" id="Email" >
+                    <div class="slds-form--stacked">
+                        <div class="slds-form-element">
+                            <lightning:input type="text" name="toEM" aura:id="email" value="{!v.email}" required="true" label="To Email Address" placeholder="abc@email.com"/>
+                            
+                        </div>
+                        <div class="slds-form-element">
+                            <lightning:input type="text" name="cc" aura:id="ccEmail" value="{!v.ccEmail}" label="CC Email Address" placeholder="abc@email.com"/>
+                        </div>
+                        <div class="slds-form-element">
+                            <lightning:input  aura:id="subject"  value="{!v.subject}" label="Subject"/>
+                            
+                        </div>
+                        <div class="slds-form-element">
+                            <label class="slds-form-element__label" for="textareaSample2">Mail Body</label>
+                            <div class="slds-form-element__control">
+                                <lightning:inputRichText aura:id="body" value="{!v.body}" />
+                            </div>
+                        </div>
+                        <div class="slds-form-element">
+                            <article class="slds-card">
+                                <aura:iteration items="{!v.Attachments}" var="attach"> 
+                                    <div class="slds-card__header slds-grid">
+                                        <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                                            <div class="slds-media__figure">
+                                                <span class="slds-icon_container slds-icon-standard-contact" title="description of icon when needed">
+                                                    <lightning:icon iconName="standard:file" variant="File" size="small"/>
+                                                </span>
+                                            </div>
+                                            <div class="slds-media__body">
+                                                <h2>
+                                                    <a href="{!'/servlet/servlet.FileDownload?file='+attach.Id}" class="slds-card__header-link slds-truncate" target="_blank" title="{!attach.Name}">
+                                                        <span class="slds-text-heading_small">{!attach.Name}</span>
+                                                    </a>
+                                                </h2>
+                                            </div>
+                                        </header>
+                                    </div>
+                                </aura:iteration>
+                            </article>
+                        </div>
+                        <br/><br/>
+                        
+                    </div>
+                    <div class="slds-grid slds-gutters">
+                         <div class="slds-col">
+                            <div class="slds-float_left">
+                                <lightning:button class="slds-button slds-button--brand" name="Preview" label="Previous" iconName="utility:back" iconPosition="left"  variant="brand" onclick="{!c.previous}" />
+                            </div>
+                        </div>
+                        <div class="slds-col">
+                            <div class="slds-float_right">
+                                <lightning:button class="slds-button slds-button--brand" onclick="{!c.sendEmail}">Send</lightning:button>
+                            </div>
+                        </div>
+                    </div>
+                </lightning:tab>
+            </aura:if>
+        </aura:if>
+        <aura:if isTrue="{!v.loadingSpinner}">
+            <lightning:spinner alternativeText="Loading" size="large" />
+        </aura:if>
+            </aura:set>
+             </aura:if>
+    </lightning:tabset>
+   
+    <!-- <div class="calculate">
+                              <lightning:button label="Preview"  iconPosition="left" class="btn btn-primary" onclick="{!c.printQuoteDetails}"/>
+    </div>
+    <div class="calculate">
+                              <lightning:button label="Save Proposal" iconName="utility:note" iconPosition="right" class="btn btn-primary" onclick="{!c.saveQuoteDetails}"/>
+                               
+   <div class="slds-float_right">
+        <lightning:button label="Next" variant="brand" iconName="utility:arrow_right" iconPosition="right" class="btn btn-primary" onclick=""/>
+        </div>                        
+ </div> -->
+    
+</aura:component>

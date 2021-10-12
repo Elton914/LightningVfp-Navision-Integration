@@ -1,0 +1,19 @@
+<apex:page standardController="Proposal__c" showHeader="false"  extensions="saveProposalPDF"   >
+
+     <apex:include pagename="proposalPDF"/>
+  <apex:form >
+    <apex:actionFunction name="saveAttachement" action="{!saveAttachement}" rerender="allPanel" />
+    
+
+        <script>
+           window.onload=function()
+           {
+             saveAttachement();
+              
+           };
+    
+        </script>
+
+  </apex:form>
+
+</apex:page>

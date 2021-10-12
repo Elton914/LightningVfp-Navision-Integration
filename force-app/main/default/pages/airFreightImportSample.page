@@ -1,0 +1,105 @@
+<apex:page standardController="Opportunity" RenderAs="PDF" >
+ <apex:includeLightning /> 
+    
+ 
+    
+    
+     <div  id="Con" />
+    <script>
+        $Lightning.use(“c:generateProposalApp”, function() {
+            $Lightning.createComponent(
+                “c:generateProposal”,
+                {},
+                “Con”,
+                function(cmp) {
+                    console.log(“Component is created!”);
+                    console.log(cmp);
+                });
+            });        
+      </script>
+      
+
+    
+    
+    
+    
+          
+     
+      
+      <div>
+    
+    <apex:image url="{!$Resource.header}" style="margin-left: -75px; margin-top: -3px;"/>
+      
+ 
+      </div>
+    
+
+    
+    {!Opportunity.Account.Name}<br/>
+    {!Opportunity.Account.BillingStreet}<br />
+    {!Opportunity.Account.BillingCity}, {!Opportunity.Account.BillingState} {!Opportunity.Account.BillingPostalCode}<br/>
+    {!Opportunity.Account.BillingCountry}
+    <br />
+    <br />
+  
+    OUR REF:<br/>
+    DATE:  <apex:outputText value="{0, date, MMMM d','  yyyy}">
+    <apex:param value="{!NOW()}" />
+</apex:outputText>
+<br/>
+    YOUR REF:<br/>
+  <!--  <apex:relatedList list="Selected_Products__r" title="Activity History" />
+   --> 
+   <title font-size="70px"><b><u>Airfreight Quotation for {!Opportunity.Account.Name} </u></b></title><br />
+    <br />
+    <br />
+    
+    <apex:pageBlock >
+        <apex:pageBlockTable value="{!Opportunity.Selected_Products__r}" var="item1" Id="header" style="width: 100%; " border="1" >
+            <table Id="header" style="width: 100%; " border ="1">
+                
+           <tr>
+               <td>
+            <apex:column value="{!item1.Product__c}"/>
+                   </td>
+               <td>
+            <apex:column value="{!item1.Price__c}"/>
+                   </td>
+               <td>
+            <apex:column value="{!item1.Unit_of_Measure__c}"/>
+                   </td>
+            </tr>
+             
+             </table>  
+          
+        </apex:pageBlockTable>
+    </apex:pageBlock>
+    <br/>
+      <table Id="header" style="width: 100%; " border ="1">
+                   <tr><td>Total Cost Estimate</td>
+                    <!--   <td>{!Opportunity.CurrencyIsoCode}{!ROUND(Opportunity.Total_Cost_Estimate__c,2)}</td>
+                       -->
+                    <td></td>
+                </tr>
+            </table>
+    <br />
+    <br />
+    Yours Faithfully,<br/>
+  <b>MITCHELL COTTS FREIGHT KENYA LIMITED</b> <br/>
+    <br/>
+    <b><u>{!Opportunity.Owner.Name}</u></b><br/>
+    <br/>
+    <b>Airfreight exports</b><br/>
+    Kindly confirm acceptance of above rates and payment arrangements by signing below and return a copy to us:
+    
+    <table>
+        <tr><td><b>Name:</b></td><td></td></tr>
+        <tr><td><b>Signature:</b></td><td></td></tr>
+        <tr><td><b>Date:</b></td><td></td></tr>
+    </table>
+    
+    <div style="margin-left: -40px; " >
+
+    <apex:image url="{!$Resource.Footer}" />
+     </div>
+</apex:page>
