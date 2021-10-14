@@ -12,7 +12,7 @@ trigger OpportunityApprovalTrigger on Opportunity (before update, after update) 
         }
     }
     
-    //test i am typing
+    //test i am typing this thing
     
     
     if (Trigger.isupdate && Trigger.isAfter)
