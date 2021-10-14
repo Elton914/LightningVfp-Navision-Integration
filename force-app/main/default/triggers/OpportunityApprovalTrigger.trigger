@@ -12,7 +12,7 @@ trigger OpportunityApprovalTrigger on Opportunity (before update, after update) 
         }
     }
     
-    //test i am typing this thing for git testing
+    //hi winnie test i am typing this thing for git testing
     
     
     if (Trigger.isupdate && Trigger.isAfter)
