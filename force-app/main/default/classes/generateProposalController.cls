@@ -67,7 +67,7 @@ public class generateProposalController {
             
             Opportunity oppRecord = new Opportunity();
             for(Opportunity opp:[SELECT Id,Name,AccountId,Proposal_Approved__c, Opportunity_Checklist_Approved__c, Cargo_Details__c,Description,Pricebook2Id,Scope_Of_Work__c,Type_of_Cargo__c,
-                                 (SELECT Id,ListPrice,OpportunityId,Name,Product2Id,ProductCode,Quantity,UnitPrice,Subtotal,TotalPrice,PricebookentryId 
+                                 (SELECT Id,ListPrice,OpportunityId,Name,Description,Product2Id,ProductCode,Quantity,UnitPrice,Subtotal,TotalPrice,PricebookentryId 
                                   FROM OpportunityLineItems),
                                  (SELECT Id,Description__c,Salutation__c FROM Proposal__r  ORDER BY Createddate DESC LIMIT 1 ),
                                  (SELECT Id,Quote_Description__c,Salutation__c FROM Quotes ORDER BY Createddate DESC LIMIT 1),
@@ -146,9 +146,65 @@ public class generateProposalController {
     }
     
     @AuraEnabled
-    public static list<sobject> saveDocumentDetails(List<sObject> docDetails){
+    public static list<sobject> saveDocumentDetails(List<sObject> docDetails, Id oppId, String  letterhead, String typeDocument)
+    {
         try
         {
+            List<sobject> soToUpdate = new List<sobject>();
+            
+            for (sobject so : docDetails)
+            {
+                
+                    System.debug('so --'+ so);
+                String docName = '';
+                Opportunity opp;
+                if(String.isNotBlank(oppId))
+                {
+                    opp = [SELECT Id,Account.Name   FROM Opportunity WHERE Id =:oppId];
+                }
+                System.debug('opp --'+ opp);
+                System.debug('ID --'+ so.get('Id'));
+                System.debug(letterhead);
+                String refNumber;
+                if (letterhead == 'Mitchell Cotts Kenya')
+                {
+                    refNumber = 'MCFKL/'+System.Today().year()+'/'+System.Today().month()+'-';
+                }
+                else if (letterhead == 'Mitchell Cotts Rwanda')
+                {
+                    refNumber = 'MCFRL/'+System.Today().year()+'/'+System.Today().month()+'-';
+                }
+                else if (letterhead == 'Upstream Uganda')
+                {
+                    refNumber = 'UPL/'+System.Today().year()+'/'+System.Today().month()+'-';
+                }
+                else if (letterhead == 'Seven Stars')
+                {
+                    refNumber = 'SSL/'+System.Today().year()+'/'+System.Today().month()+'-';
+                }
+                
+                DocumentRefNumber__c refnumberMT = DocumentRefNumber__c.getInstance(letterhead);
+                 System.debug('refnumberMT --'+refnumberMT);
+               
+                refnumberMT.Last_Number__c =  refnumberMT.Last_Number__c + 1;
+                Integer lastnumber = Integer.valueOf(refnumberMT.Last_Number__c );
+                
+                refNumber = refNumber+ String.valueOf(lastnumber).leftPad(4, '0');
+                System.debug('refNumber --'+refNumber);
+                
+                docName = opp.Account.Name + ' - '+typeDocument + ' - ' + refnumber;
+                
+                
+                so.put('Reference_Number__c', refnumber);
+                so.put('Name', docName);
+                System.debug('final so --'+so);
+                soToUpdate.add(so);
+                update refnumberMT;
+                
+            }
+            
+            System.debug(soToUpdate);
+            upsert soToUpdate;
             upsert docDetails;
             return docDetails;
         }
@@ -158,6 +214,8 @@ public class generateProposalController {
                                            + ex.getMessage());    
         } 	
     }
+    
+    
     @AuraEnabled
     public static Opportunity updateOpportunity(Opportunity opp)
     {
@@ -230,10 +288,10 @@ public class generateProposalController {
                                            + ex.getMessage());    
         }
     }
+    
     @AuraEnabled 
-    public static List<Attachment> saveAttachmentDoc(Id sobjectId, String attType, Id oppId, String selectedDocument, string letterheadOp)
+    public static Opportunity saveAttachmentDoc( Id oppId, String selectedDocument)
     { 
-        system.debug('letterheadOp');
         try
         {
             
@@ -241,71 +299,18 @@ public class generateProposalController {
             Opportunity opp;
             if(String.isNotBlank(oppId))
             {
-                opp = [SELECT Id,Account.Name,SOP_Sent__c FROM Opportunity WHERE Id =:oppId];
-                
-                attName = opp.Account.Name + '-Proposal'+system.now();
+                opp = [SELECT Id,Account.Name, SOP_Sent__c, Probability, Price_Updated__c,  StageName  FROM Opportunity WHERE Id =:oppId];
             }
-            List<Attachment> attachmentRecords= new list<Attachment>();
-            String extType = '';
-            if(attType == 'pdf' || string.isBlank(attType))
-            {
-                extType = '.pdf';
-            }
-            Blob body;
-            PageReference pdf;
-            if(selectedDocument.contains('Proposal'))
-            {
-                pdf = Page.proposalPDF;
-            }
-            else if(selectedDocument.contains('SOP'))
+            
+            if(selectedDocument.contains('SOP'))
             { 
                 opp.SOP_Sent__c = true;
                 opp.StageName = 'SOP Sent';
-                pdf = Page.sopPDF;
-            }
-            else if(selectedDocument.contains('Quote'))
-            {
-                pdf = Page.quotePDF;
-            }
-            else if(selectedDocument.contains('Contract'))
-            {
-                pdf = Page.contractPDF;
-            }
-            pdf.getParameters().put('ID',sobjectId);
-            pdf.getParameters().put('letterHeadValue',letterheadOp);
-            pdf.setRedirect(true);              
-            
-            try
-            {
-               if(Test.isRunningTest()) { 
-                   body = blob.valueOf('Unit.Test');
-               } else {
-                  body = pdf.getContent();
-               }
-                
-                
-            }
-            catch(Exception ex)
-            {
-                body = Blob.valueOf('No data');
             }
             
-            //String attName = Proposal__c.Opportunity__r.account.name + system.now() + extType;
-            // system.debug('attName------->' + attName);
-            attName =  attName.replace('/', '-').replace(' ','').replace('.', '-')+'.pdf';
-            Attachment attach = new Attachment();
-            attach.Body = body;
-            attach.Name =attName;
-            attach.IsPrivate = false;
-            attach.ParentId = oppId;//sobjectId;
-            system.debug('attach-----------' + attach);
-            insert attach;
             update opp;
             
-            attachmentRecords.add(attach);
-            
-            system.debug('attachmentRecords------' + attachmentRecords);
-            return attachmentRecords;
+            return opp;
             
         }
         catch (exception ex)
@@ -314,6 +319,9 @@ public class generateProposalController {
                                            + ex.getMessage());    
         }
     }
+    
+    
+    
     @AuraEnabled 
     public static void sendMailMethod(String mMail ,String mSubject ,String mbody, list<Attachment> AttachId, String ccMail)
     {

@@ -1,0 +1,604 @@
+<aura:component access="GLOBAL" controller="DocumentPreviewController" implements="force:appHostable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes,force:lightningQuickAction,lightning:availableForFlowScreens"  >
+    
+    <aura:attribute name="proposals" type="list" />
+    <aura:attribute name="isSpinner" type="boolean" default="false" />
+    <aura:attribute name="contracts" type="list" />
+    <aura:attribute name="sops" type="list" />
+    <aura:attribute name="documentURL" type="string" />
+    <aura:attribute name="documentHeader" type="string" />
+    <aura:attribute name="showDocument" type="Boolean" default="false" />
+    <aura:attribute name="showSendEmail" type="Boolean" default="false" />
+    <aura:attribute name="email" type="string"/>
+    <aura:attribute name="ccEmail" type="string"/>
+   	<aura:attribute name="subject" type="string"/>
+    <aura:attribute name="VfPage" type="string"/>
+    <aura:attribute name="attId" type="string"/>
+    <aura:attribute name="attName" type="string"/>
+     
+   	<aura:attribute name="body" type="string"/>
+    <aura:attribute name="pryContact" type="String" />
+    <aura:attribute name="Attachments" type="list" /> 
+     <aura:attribute name="letterHeadValue" type="string"/>
+    
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    
+    
+    
+    
+    <div class="slds-page-header">
+        <div class="slds-grid">
+            <div class="slds-col slds-has-flexi-truncate">
+                <p class="slds-text-heading--label">Documents Management Utility</p>
+                <div class="slds-grid">
+                    <div class="slds-grid slds-type-focus  ">
+                        <h1 class="slds-text-heading--medium slds-truncate" title="Open Orders">Manage documents,preview, approval &amp; printing</h1>
+                    </div>
+                </div>
+            </div>
+        </div> 
+    </div>
+    <br />
+    
+    <div class="slds-box slds-theme_shade slds-theme_alert-texture">
+        <div class="slds-box slds-theme_default">
+            <aura:if isTrue="{!v.isSpinner}">
+                <div class="spinnerHolder">
+                    <lightning:spinner alternativeText="Loading" size="large" />
+                </div>
+            </aura:if>
+            
+            <div class="slds-grid">
+                <div class="slds-col slds-has-flexi-truncate">
+                    <p class="slds-text-heading--label">Proposals</p>
+                    
+                </div>
+            </div> 
+            <br/>
+            <aura:if isTrue="{!not(empty(v.proposals))}">
+                
+                <table class="slds-table slds-table_bordered slds-table_col-bordered  slds-p-bottom_large" role="grid">
+                    <thead>
+                        <tr class="slds-text-title--caps">
+                            
+                            <th  width="15%" aria-sort="none" class="  slds-text-title_caps slds-cell-wrap slds-cell-buffer_left" aria-label="Name" scope="col" >
+                                <a class="slds-th__action slds-text-link_reset" href="javascript:void(0);" role="button" tabindex="0">
+                                    <span class="slds-cell-wrap slds-text-align--center" title="Lead Time">Proposal Name</span>
+                                </a>
+                            </th>
+                            <th width="15%"   aria-sort="none" class="  slds-text-title_caps slds-cell-wrap slds-cell-buffer_left" aria-label="Name" scope="col" >
+                                <a  class="slds-th__action slds-text-link_reset" href="javascript:void(0);" role="button" tabindex="0">
+                                    <span class="slds-cell-wrap slds-text-align--center" title="Lead Time">Created Date</span>
+                                </a>
+                            </th>
+                            
+                            
+                            <th width="15%"  aria-sort="none" class="  slds-text-title_caps slds-cell-wrap slds-cell-buffer_left" aria-label="Name" scope="col" >
+                                <a class="slds-th__action slds-text-link_reset" href="javascript:void(0);" role="button" tabindex="0">
+                                    <span class="slds-cell-wrap slds-text-align--center" title="Lead Time">Last Modified Date</span>
+                                </a>
+                            </th>
+                            <th width="15%"  aria-sort="none" class="  slds-text-title_caps slds-cell-wrap slds-cell-buffer_left" aria-label="Name" scope="col" >
+                                <a class="slds-th__action slds-text-link_reset" href="javascript:void(0);" role="button" tabindex="0">
+                                    <span class="slds-cell-wrap slds-text-align--center" title="Lead Time">Proposal Approved?</span>
+                                </a>
+                            </th>
+                            
+                            <th width="15%"  aria-sort="none" class="  slds-text-title_caps slds-cell-wrap slds-cell-buffer_left" aria-label="Name" scope="col" >
+                                <a class="slds-th__action slds-text-link_reset" href="javascript:void(0);" role="button" tabindex="0">
+                                    <span class="slds-cell-wrap slds-text-align--center" title="Lead Time">Approver</span>
+                                </a>
+                            </th>
+                            
+                            <th  width="12.5%" aria-sort="none" class="  slds-text-title_caps slds-cell-wrap slds-cell-buffer_left" aria-label="Name" scope="col" >
+                                <a class="slds-th__action slds-text-link_reset" href="javascript:void(0);" role="button" tabindex="0">
+                                    <span class="slds-cell-wrap slds-text-align--center" title="Lead Time">Preview</span>
+                                </a>
+                            </th>
+                            <th  width="12.5%" aria-sort="none" class="  slds-text-title_caps slds-cell-wrap slds-cell-buffer_left" aria-label="Name" scope="col" >
+                                <a class="slds-th__action slds-text-link_reset" href="javascript:void(0);" role="button" tabindex="0">
+                                    <span class="slds-cell-wrap slds-text-align--center" title="Lead Time">Send</span>
+                                </a>
+                            </th>
+                            
+                            
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <aura:iteration items="{!v.proposals}" var="proposal">
+                            <tr>
+                                
+                                
+                                
+                                <td scope="row" class="slds-cell-wrap slds-cell-buffer_left" role="gridcell">
+                                    <span class="slds-text-align--center">
+                                        <ui:outputText class="slds-text-align--center"  value="{!proposal.Name}"  />
+                                    </span>
+                                </td>
+                                
+                                
+                                
+                                <td scope="row" class="slds-cell-wrap slds-cell-buffer_left color-background-error" role="gridcell">
+                                    <span class="sslds-text-align--center">
+                                        <ui:outputDateTime   class="slds-text-align--center" value="{!proposal.CreatedDate}" format =""/>
+                                    </span>
+                                </td>
+                                
+                                <td scope="row" class="slds-cell-wrap slds-cell-buffer_left color-background-error" role="gridcell">
+                                    <span class="sslds-text-align--center">
+                                        <ui:outputDateTime   class="slds-text-align--center" value="{!proposal.LastModifiedDate}" format =""/>
+                                    </span>
+                                </td>
+                                
+                                <td scope="row" class="slds-cell-wrap slds-cell-buffer_left" role="gridcell">
+                                    <span class="sslds-text-align--center color-background-error">
+                                        <ui:outputCheckbox class="slds-text-align--center" value="{!proposal.Opportunity__r.Proposal_Approved__c}" />
+                                    </span>
+                                </td>
+                                
+                                
+                                <td scope="row" class="slds-cell-wrap slds-cell-buffer_left" role="gridcell">
+                                    <span class="sslds-text-align--center color-background-error">
+                                        <ui:outputText class="slds-text-align--center" value="{!proposal.Opportunity__r.Owner.Manager.Name }" />
+                                    </span>
+                                </td>
+                                
+                                
+                                <td scope="row"  class="slds-cell-wrap slds-cell-buffer_left" role="gridcell">
+                                    <span class="slds-text-align--center">     
+                                        <lightning:button label="Preview Proposal" iconName="utility:file" iconPosition="left" name="{!proposal.Id}" variant="brand"  onclick="{!c.previewProposaldownload}"/>
+                                    </span>
+                                </td>
+                                
+                                <td scope="row"  class="slds-cell-wrap slds-cell-buffer_left" role="gridcell">
+                                    <span class="slds-text-align--center"> 
+                                                        
+                                     <aura:if isTrue="{!and(proposal.Opportunity__r.Proposal_Approved__c == true, proposal.Opportunity__r.Price_Updated__c==false)}">
+                                         <div  onclick="{!c.sendproposal}"  data-name="{!proposal.Id}" data-VfPage="proposalpdf" data-attId="{!proposal.Id}" data-attName="{!proposal.Name}">
+ 
+                                         <lightning:button label="Send Proposal" iconName="utility:email" iconPosition="left"  variant="brand" />
+                                         </div>
+                                           <aura:set attribute="else">
+                                                 <lightning:button label="Send Proposal"  disabled="true"  iconName="utility:email" iconPosition="left" name="{!proposal.Id}" variant="brand"  />
+                                       
+                                            </aura:set>
+                                        </aura:if>
+                                    </span>
+                                </td>
+                                
+                            </tr>
+                        </aura:iteration>
+                    </tbody>
+                </table>
+                
+                <aura:set attribute="else">
+                    <tr>
+                        <td scope="row" class="slds-cell-wrap slds-cell-buffer_left" role="gridcell" colspan="8">
+                            <span class="slds-text-align--center">
+                                No Proposals documents generated yet
+                            </span>
+                        </td> 
+                    </tr>
+                </aura:set>
+            </aura:if>
+            
+            <br />
+            
+        </div>
+    </div>
+    
+    <br />
+    
+    <div class="slds-box slds-theme_shade slds-theme_alert-texture">
+        <div class="slds-box slds-theme_default">
+            <aura:if isTrue="{!v.isSpinner}">
+                <div class="spinnerHolder">
+                    <lightning:spinner alternativeText="Loading" size="large" />
+                </div>
+            </aura:if>
+            
+            <div class="slds-grid">
+                <div class="slds-col slds-has-flexi-truncate">
+                    <p class="slds-text-heading--label">Standard Operating Procedures (SOPs)</p>
+                    
+                </div>
+            </div> 
+            <br/>
+            
+            <aura:if isTrue="{!not(empty(v.sops))}">
+                
+                <table class="slds-table slds-table_bordered slds-table_col-bordered  slds-p-bottom_large" role="grid">
+                    <thead>
+                        <tr class="slds-text-title--caps">
+                            
+                            <th  width="15%" aria-sort="none" class="  slds-text-title_caps slds-cell-wrap slds-cell-buffer_left" aria-label="Name" scope="col" >
+                                <a class="slds-th__action slds-text-link_reset" href="javascript:void(0);" role="button" tabindex="0">
+                                    <span class="slds-cell-wrap slds-text-align--center" title="Lead Time">SOP Name</span>
+                                </a>
+                            </th>
+                            <th width="15%"   aria-sort="none" class="  slds-text-title_caps slds-cell-wrap slds-cell-buffer_left" aria-label="Name" scope="col" >
+                                <a  class="slds-th__action slds-text-link_reset" href="javascript:void(0);" role="button" tabindex="0">
+                                    <span class="slds-cell-wrap slds-text-align--center" title="Lead Time">Created Date</span>
+                                </a>
+                            </th>
+                            
+                            
+                            <th width="15%"  aria-sort="none" class="  slds-text-title_caps slds-cell-wrap slds-cell-buffer_left" aria-label="Name" scope="col" >
+                                <a class="slds-th__action slds-text-link_reset" href="javascript:void(0);" role="button" tabindex="0">
+                                    <span class="slds-cell-wrap slds-text-align--center" title="Lead Time">Last Modified Date</span>
+                                </a>
+                            </th>
+                            <th width="15%"  aria-sort="none" class="  slds-text-title_caps slds-cell-wrap slds-cell-buffer_left" aria-label="Name" scope="col" >
+                                <a class="slds-th__action slds-text-link_reset" href="javascript:void(0);" role="button" tabindex="0">
+                                    <span class="slds-cell-wrap slds-text-align--center" title="Lead Time">Proposal Approved?</span>
+                                </a>
+                            </th>
+                            
+                            <th width="15%"  aria-sort="none" class="  slds-text-title_caps slds-cell-wrap slds-cell-buffer_left" aria-label="Name" scope="col" >
+                                <a class="slds-th__action slds-text-link_reset" href="javascript:void(0);" role="button" tabindex="0">
+                                    <span class="slds-cell-wrap slds-text-align--center" title="Lead Time">Approver</span>
+                                </a>
+                            </th>
+                            
+                            <th  width="12.5%" aria-sort="none" class="  slds-text-title_caps slds-cell-wrap slds-cell-buffer_left" aria-label="Name" scope="col" >
+                                <a class="slds-th__action slds-text-link_reset" href="javascript:void(0);" role="button" tabindex="0">
+                                    <span class="slds-cell-wrap slds-text-align--center" title="Lead Time">Preview</span>
+                                </a>
+                            </th>
+                            <th  width="12.5%" aria-sort="none" class="  slds-text-title_caps slds-cell-wrap slds-cell-buffer_left" aria-label="Name" scope="col" >
+                                <a class="slds-th__action slds-text-link_reset" href="javascript:void(0);" role="button" tabindex="0">
+                                    <span class="slds-cell-wrap slds-text-align--center" title="Lead Time">Send</span>
+                                </a>
+                            </th>
+                            
+                            
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <aura:iteration items="{!v.sops}" var="sop">
+                            <tr>
+                                
+                                
+                                
+                                <td scope="row" class="slds-cell-wrap slds-cell-buffer_left" role="gridcell">
+                                    <span class="slds-text-align--center">
+                                        <ui:outputText class="slds-text-align--center"  value="{!sop.Name}"  />
+                                    </span>
+                                </td>
+                                
+                                
+                                
+                                <td scope="row" class="slds-cell-wrap slds-cell-buffer_left color-background-error" role="gridcell">
+                                    <span class="sslds-text-align--center">
+                                        <ui:outputDateTime   class="slds-text-align--center" value="{!sop.CreatedDate}" format =""/>
+                                    </span>
+                                </td>
+                                
+                                <td scope="row" class="slds-cell-wrap slds-cell-buffer_left color-background-error" role="gridcell">
+                                    <span class="sslds-text-align--center">
+                                        <ui:outputDateTime   class="slds-text-align--center" value="{!sop.LastModifiedDate}" format =""/>
+                                    </span>
+                                </td>
+                                
+                                <td scope="row" class="slds-cell-wrap slds-cell-buffer_left" role="gridcell">
+                                    <span class="sslds-text-align--center color-background-error">
+                                        <ui:outputCheckbox class="slds-text-align--center" value="{!sop.Opportunity__r.Proposal_Approved__c}" />
+                                    </span>
+                                </td>
+                                
+                                
+                                <td scope="row" class="slds-cell-wrap slds-cell-buffer_left" role="gridcell">
+                                    <span class="sslds-text-align--center color-background-error">
+                                        <ui:outputText class="slds-text-align--center" value="{!sop.Opportunity__r.Owner.Manager.Name }" />
+                                    </span>
+                                </td>
+                                
+                                
+                                <td scope="row"  class="slds-cell-wrap slds-cell-buffer_left" role="gridcell">
+                                    <span class="slds-text-align--center">     
+                                        <lightning:button label="Preview SOP" iconName="utility:file" iconPosition="left" name="{!sop.Id}" variant="brand"  onclick="{!c.previewSOPdownload}"/>
+                                    </span>
+                                </td>
+                                
+                                <td scope="row"  class="slds-cell-wrap slds-cell-buffer_left" role="gridcell">
+                                    <span class="slds-text-align--center">     
+                                    </span>
+                                    
+                                     <aura:if isTrue="{!and(sop.Opportunity__r.Proposal_Approved__c, sop.Opportunity__r.Price_Updated__c==false)}">
+                                          <div  onclick="{!c.sendSOP}"  data-name="{!sop.Id}" data-VfPage="soppdf" data-attId="{!sop.Id}" data-attName="{!sop.Name}">
+ 	                                        <lightning:button label="Send SOP" iconName="utility:email" iconPosition="left"  variant="brand" />
+                                         </div>
+                                         
+                                    <aura:set attribute="else">
+                                              <lightning:button label="Send SOP"  disabled="true" iconName="utility:email" iconPosition="left" name="{!sop.Id}" variant="brand"  />
+                                          
+                                            </aura:set>
+                                        </aura:if>
+                                    
+                                </td>
+                                
+                            </tr>
+                        </aura:iteration>
+                    </tbody>
+                </table>
+                <br />
+                <aura:set attribute="else">
+                    <tr>
+                        <td scope="row" class="slds-cell-wrap slds-cell-buffer_left" role="gridcell" colspan="8">
+                            <span class="slds-text-align--center">
+                                No SOP documents generated yet
+                            </span>
+                        </td> 
+                    </tr>
+                </aura:set>
+            </aura:if>
+            
+        </div>
+    </div>
+    
+    <br />
+    <div class="slds-box slds-theme_shade slds-theme_alert-texture">
+        <div class="slds-box slds-theme_default">
+            <aura:if isTrue="{!v.isSpinner}">
+                <div class="spinnerHolder">
+                    <lightning:spinner alternativeText="Loading" size="large" />
+                </div>
+            </aura:if>
+            
+            <div class="slds-grid">
+                <div class="slds-col slds-has-flexi-truncate">
+                    <p class="slds-text-heading--label">Contracts</p>
+                    
+                </div>
+            </div> 
+            <br/>
+            <aura:if isTrue="{!not(empty(v.contracts))}">
+                <table class="slds-table slds-table_bordered slds-table_col-bordered  slds-p-bottom_large" role="grid">
+                    <thead>
+                        <tr class="slds-text-title--caps">
+                            
+                            <th  width="15%" aria-sort="none" class="  slds-text-title_caps slds-cell-wrap slds-cell-buffer_left" aria-label="Name" scope="col" >
+                                <a class="slds-th__action slds-text-link_reset" href="javascript:void(0);" role="button" tabindex="0">
+                                    <span class="slds-cell-wrap slds-text-align--center" title="Lead Time">Contracts Name</span>
+                                </a>
+                            </th>
+                            <th width="15%"   aria-sort="none" class="  slds-text-title_caps slds-cell-wrap slds-cell-buffer_left" aria-label="Name" scope="col" >
+                                <a  class="slds-th__action slds-text-link_reset" href="javascript:void(0);" role="button" tabindex="0">
+                                    <span class="slds-cell-wrap slds-text-align--center" title="Lead Time">Created Date</span>
+                                </a>
+                            </th>
+                            
+                            
+                            <th width="15%"  aria-sort="none" class="  slds-text-title_caps slds-cell-wrap slds-cell-buffer_left" aria-label="Name" scope="col" >
+                                <a class="slds-th__action slds-text-link_reset" href="javascript:void(0);" role="button" tabindex="0">
+                                    <span class="slds-cell-wrap slds-text-align--center" title="Lead Time">Last Modified Date</span>
+                                </a>
+                            </th>
+                            <th width="15%"  aria-sort="none" class="  slds-text-title_caps slds-cell-wrap slds-cell-buffer_left" aria-label="Name" scope="col" >
+                                <a class="slds-th__action slds-text-link_reset" href="javascript:void(0);" role="button" tabindex="0">
+                                    <span class="slds-cell-wrap slds-text-align--center" title="Lead Time">Proposal Approved?</span>
+                                </a>
+                            </th>
+                            
+                            <th width="15%"  aria-sort="none" class="  slds-text-title_caps slds-cell-wrap slds-cell-buffer_left" aria-label="Name" scope="col" >
+                                <a class="slds-th__action slds-text-link_reset" href="javascript:void(0);" role="button" tabindex="0">
+                                    <span class="slds-cell-wrap slds-text-align--center" title="Lead Time">Approver</span>
+                                </a>
+                            </th>
+                            
+                            <th  width="12.5%" aria-sort="none" class="  slds-text-title_caps slds-cell-wrap slds-cell-buffer_left" aria-label="Name" scope="col" >
+                                <a class="slds-th__action slds-text-link_reset" href="javascript:void(0);" role="button" tabindex="0">
+                                    <span class="slds-cell-wrap slds-text-align--center" title="Lead Time">Preview</span>
+                                </a>
+                            </th>
+                            <th  width="12.5%" aria-sort="none" class="  slds-text-title_caps slds-cell-wrap slds-cell-buffer_left" aria-label="Name" scope="col" >
+                                <a class="slds-th__action slds-text-link_reset" href="javascript:void(0);" role="button" tabindex="0">
+                                    <span class="slds-cell-wrap slds-text-align--center" title="Lead Time">Send</span>
+                                </a>
+                            </th>
+                            
+                            
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <aura:iteration items="{!v.contracts}" var="contract">
+                            <tr>
+                                
+                                
+                                
+                                <td scope="row" class="slds-cell-wrap slds-cell-buffer_left" role="gridcell">
+                                    <span class="slds-text-align--center">
+                                        <ui:outputText class="slds-text-align--center"  value="{!contract.Name}"  />
+                                    </span>
+                                </td>
+                                
+                                
+                                
+                                <td scope="row" class="slds-cell-wrap slds-cell-buffer_left color-background-error" role="gridcell">
+                                    <span class="sslds-text-align--center">
+                                        <ui:outputDateTime   class="slds-text-align--center" value="{!contract.CreatedDate}" format =""/>
+                                    </span>
+                                </td>
+                                
+                                <td scope="row" class="slds-cell-wrap slds-cell-buffer_left color-background-error" role="gridcell">
+                                    <span class="sslds-text-align--center">
+                                        <ui:outputDateTime   class="slds-text-align--center" value="{!contract.LastModifiedDate}" format =""/>
+                                    </span>
+                                </td>
+                                
+                                <td scope="row" class="slds-cell-wrap slds-cell-buffer_left" role="gridcell">
+                                    <span class="sslds-text-align--center color-background-error">
+                                        <ui:outputCheckbox class="slds-text-align--center" value="{!contract.Opportunity__r.Proposal_Approved__c}" />
+                                    </span>
+                                </td>
+                                
+                                
+                                <td scope="row" class="slds-cell-wrap slds-cell-buffer_left" role="gridcell">
+                                    <span class="sslds-text-align--center color-background-error">
+                                        <ui:outputText class="slds-text-align--center" value="{!contract.Opportunity__r.Owner.Manager.Name }" />
+                                    </span>
+                                </td>
+                                
+                                
+                                <td scope="row"  class="slds-cell-wrap slds-cell-buffer_left" role="gridcell">
+                                    <span class="slds-text-align--center">     
+                                        <lightning:button label="Preview Contract" iconName="utility:file" iconPosition="left" name="{!contract.Id}" variant="brand"  onclick="{!c.previewContractdownload}"/>
+                                    </span>
+                                </td>
+                                
+                                <td scope="row"  class="slds-cell-wrap slds-cell-buffer_left" role="gridcell">
+                                    <span class="slds-text-align--center">     
+                                        <aura:if isTrue="{!and(contract.Opportunity__r.Proposal_Approved__c, contract.Opportunity__r.Price_Updated__c==false)}">
+                                                  <div  onclick="{!c.sendContract}"  data-name="{!contract.Id}" data-VfPage="contractpdf" data-attId="{!contract.Id}" data-attName="{!contract.Name}">
+ 	                                        <lightning:button label="Send Contract" iconName="utility:email" iconPosition="left"  variant="brand" />
+                                         </div>
+                                             <aura:set attribute="else">
+                                                <lightning:button label="Send Contract" disabled="true"  iconName="utility:email" iconPosition="left" name="{!contract.Id}" variant="brand"   />
+                                                
+                                            </aura:set>
+                                        </aura:if>
+                                    </span>
+                                </td>
+                                
+                            </tr>
+                        </aura:iteration>
+                    </tbody>
+                </table>
+                
+                <aura:set attribute="else">
+                    <tr>
+                        <td scope="row" class="slds-cell-wrap slds-cell-buffer_left" role="gridcell" colspan="8">
+                            <span class="slds-text-align--center">
+                                No contract documents generated yet
+                            </span>
+                        </td> 
+                    </tr>
+                </aura:set>
+            </aura:if>
+            
+            <br />
+            
+        </div>
+    </div>
+    
+    
+    
+    <aura:if isTrue="{!v.showDocument}">
+        <!-- MODAL BOX Start From Here -->
+        <div role="dialog" tabindex="-1" aria-labelledby="header99" class="slds-modal slds-fade-in-open ">
+            <div class="slds-modal__container  slds-p-top_xx-large"  style="max-width: 70rem !important; width:70% !important;">
+                <!--  MODAL BOX HEADER Part Start From Here -->
+                <div class="slds-modal__header">
+                    <button class="slds-button slds-modal__close slds-button--icon-inverse" title="Close" onclick="{!c.closeModal}">
+                        X
+                        <span class="slds-assistive-text">Close</span>
+                    </button> 
+                    <h2 id="header99" class="slds-text-heading--medium">{!v.documentHeader}</h2>
+                </div>
+                <!-- MODAL BOX BODY Part Start From Here -->
+                <div class="slds-modal__content slds-p-around--medium">
+                    
+                    <iframe src="{!v.documentURL}" width="100%" height="500px;" frameBorder="0"/>
+                    
+                    
+                </div>
+                <!-- MODAL BOX FOOTER Part Start From Here -->
+                <div class="slds-modal__footer">
+                    <lightning:button class="slds-button slds-button_brand"  onclick="{!c.closeModal}">Cancel</lightning:button>
+                    
+                </div>
+            </div>
+        </div>
+        <div class="slds-backdrop slds-backdrop--open"></div>
+        <!-- MODAL BOX Part END Here -->
+        
+    </aura:if> 
+    
+      
+    <aura:if isTrue="{!v.showSendEmail}">
+        <!-- MODAL BOX Start From Here -->
+        <div role="dialog" tabindex="-1" aria-labelledby="header99" class="slds-modal slds-fade-in-open ">
+            <div class="slds-modal__container  slds-p-top_xx-large"  style="max-width: 70rem !important; width:70% !important;">
+                <!--  MODAL BOX HEADER Part Start From Here -->
+                <div class="slds-modal__header">
+                    <button class="slds-button slds-modal__close slds-button--icon-inverse" title="Close" onclick="{!c.closeModal}">
+                        X
+                        <span class="slds-assistive-text">Close</span>
+                    </button> 
+                    <h2 id="header99" class="slds-text-heading--medium">{!v.documentHeader}</h2>
+                </div>
+                <!-- MODAL BOX BODY Part Start From Here -->
+                <div class="slds-modal__content slds-p-around--medium">
+                     <div class="slds-form--stacked">
+                        <div class="slds-form-element">
+                            <lightning:input type="text" name="toEM" aura:id="email" value="{!v.email}" required="true" label="To Email Address" placeholder="abc@email.com"/>
+                            
+                        </div>
+                        <div class="slds-form-element">
+                            <lightning:input type="text" name="cc" aura:id="ccEmail" value="{!v.ccEmail}" label="CC Email Address" placeholder="abc@email.com"/>
+                        </div>
+                        <div class="slds-form-element">
+                            <lightning:input  aura:id="subject"  value="{!v.subject}" label="Subject"/>
+                            
+                        </div>
+                        <div class="slds-form-element">
+                            <label class="slds-form-element__label" for="textareaSample2">Mail Body</label>
+                            <div class="slds-form-element__control">
+                                <lightning:inputRichText aura:id="body" value="{!v.body}" />
+                            </div>
+                            <div class="slds-form-element__control slds-text-title_bold slds-text-link">
+                                <lightning:icon iconName="doctype:pdf" alternativeText="pdf" title="pdf" />
+                                <ui:outputText value="{!v.attName}"/>
+                            </div>   
+                        </div>
+                        <div class="slds-form-element">
+                            <article class="slds-card">
+                                <aura:iteration items="{!v.Attachments}" var="attach"> 
+                                    <div class="slds-card__header slds-grid">
+                                        <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                                            <div class="slds-media__figure">
+                                                <span class="slds-icon_container slds-icon-standard-contact" title="description of icon when needed">
+                                                    <lightning:icon iconName="standard:file" variant="File" size="small"/>
+                                                </span>
+                                            </div>
+                                            <div class="slds-media__body">
+                                                <h2>
+                                                    <a href="{!'/servlet/servlet.FileDownload?file='+attach.Id}" class="slds-card__header-link slds-truncate" target="_blank" title="{!attach.Name}">
+                                                        <span class="slds-text-heading_small">{!attach.Name}</span>
+                                                    </a>
+                                                </h2>
+                                            </div>
+                                        </header>
+                                    </div>
+                                </aura:iteration>
+                            </article>
+                        </div>
+                        <br/><br/>
+                        
+                    </div>
+                   
+             
+                    
+                </div>
+                <!-- MODAL BOX FOOTER Part Start From Here -->
+                <div class="slds-modal__footer">
+                     <div class="slds-grid slds-gutters">
+                         <div class="slds-col">
+                            <div class="slds-float_left">
+                          <lightning:button class="slds-button slds-button_brand"  onclick="{!c.closeModal}">Cancel</lightning:button>
+                      </div>
+                        </div>
+                        <div class="slds-col">
+                            <div class="slds-float_right">
+                                <lightning:button class="slds-button slds-button--brand" onclick="{!c.sendEmail}">Send Email</lightning:button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="slds-backdrop slds-backdrop--open"></div>
+        <!-- MODAL BOX Part END Here -->
+        
+    </aura:if> 
+    
+</aura:component>

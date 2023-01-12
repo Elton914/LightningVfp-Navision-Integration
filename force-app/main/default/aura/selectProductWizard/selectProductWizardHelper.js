@@ -29,6 +29,7 @@
         console.log(JSON.stringify(crtProducts))
         var recordId = component.get("v.recordId"); 
         var oppProduct = [];
+        
         for(var x in crtProducts)
         {
             var oppProd = {};
@@ -38,6 +39,7 @@
             oppProd['Quantity'] = crtProducts[x].Quantity
             oppProd['UnitPrice'] = crtProducts[x].UnitPrice;
             oppProdobj['VAT__c'] = oppProd[x].VAT__c;
+          
             oppProdobj['Cost__c'] = oppProd[x].Cost__c;
             oppProdobj['Exclusions__c'] = oppProd[x].Exclusions__c;
             oppProd['sobjectType'] = 'OpportunityLineItem';

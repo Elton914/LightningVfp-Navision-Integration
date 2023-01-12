@@ -2,8 +2,7 @@
     doInit  : function(component, event, helper)
     {
        var oppId = component.get("v.recordId");
-       var email = 'bckdemo@gmail.com';
-        component.set("v.email",email);
+     
        helper.fetchProductFamilyRemarks(component);
        helper.fetchOpportunity(component);
     },
@@ -59,12 +58,14 @@
         var opportunityRecord = component.get("v.opportunityDetails");
         var details = component.get("v.templates");
         var typeDocument = component.get("v.typeDocument")
+         var letterhead = component.get("v.letterHeadValue");
         var docDetails = [];
-        component.set("v.hideNextSaveDocument",true);
+     
         for(var x in details)
         {
             var docDet = {};
             docDet['Opportunity__c'] = oppId;
+ 		    docDet['LetterHead__c'] = letterhead;            
             if(typeDocument.includes('Proposal'))
             {
                 docDet['sobjectType'] = 'Proposal__c';
@@ -136,7 +137,7 @@
             docDetails.push(docDet) 
         }
         component.set("v.loadingSpinner",true);
-       	helper.createDocument(component,docDetails);
+       	helper.createDocument(component,docDetails, oppId, letterhead, typeDocument);
     },
     createRemarks : function(component, event, helper)
     {

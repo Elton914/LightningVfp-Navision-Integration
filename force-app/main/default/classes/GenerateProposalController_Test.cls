@@ -135,10 +135,10 @@ private class GenerateProposalController_Test {
         
         Test.startTest();
         
-        System.assertEquals(1, generateProposalController.saveAttachmentDoc(q.Id, 'pdf', opp.Id, 'Proposal', 'letterheadOp').size());
-        System.assertEquals(1, generateProposalController.saveAttachmentDoc(q.Id, 'pdf', opp.Id, 'SOP', 'letterheadOp').size());
-        System.assertEquals(1, generateProposalController.saveAttachmentDoc(q.Id, 'pdf', opp.Id, 'Quote', 'letterheadOp').size());
-        System.assertEquals(1, generateProposalController.saveAttachmentDoc(q.Id, 'pdf', opp.Id, 'Contract', 'letterheadOp').size());
+        System.assertEquals(opp.Id, generateProposalController.saveAttachmentDoc( opp.Id, 'Proposal').id);
+        System.assertEquals(opp.Id, generateProposalController.saveAttachmentDoc( opp.Id, 'SOP').id);
+        System.assertEquals(opp.Id, generateProposalController.saveAttachmentDoc( opp.Id, 'Quote').id);
+        System.assertEquals(opp.Id, generateProposalController.saveAttachmentDoc( opp.Id, 'Contract').id);
         
         Test.stopTest();
     }
@@ -189,10 +189,10 @@ private class GenerateProposalController_Test {
             Quote q = createQuote(opp.id);
         
         Test.startTest();
-        List<Attachment> attachments =  generateProposalController.saveAttachmentDoc(q.Id, 'SOP', opp.Id, 'Proposal', 'letterheadOp');
+    //    List<Attachment> attachments =  generateProposalController.saveAttachmentDoc( opp.Id, 'Proposal');
         
-        generateProposalController.sendMailMethod('bckdemo@gmail.com', 'subject', 'body', attachments, 'bckdemocc@gmail.com');
-        generateProposalController.sendMailMethod('bckdemo@gmail.com;bckdemo2@gmail.com', 'subject', 'body', attachments, 'bckdemocc@gmail.com');
+        generateProposalController.sendMailMethod('bckdemo@gmail.com', 'subject', 'body', new  List<Attachment>(), 'bckdemocc@gmail.com');
+        generateProposalController.sendMailMethod('bckdemo@gmail.com;bckdemo2@gmail.com', 'subject', 'body', new  List<Attachment>(), 'bckdemocc@gmail.com');
         
         Test.stopTest();
     }
@@ -224,7 +224,7 @@ private class GenerateProposalController_Test {
     
     @isTest
     private static void testssaveDocumentDetails_Fail(){
-        
+        Opportunity opp = generateOpportunity();
         
         Exception expectedException;
         
@@ -232,7 +232,7 @@ private class GenerateProposalController_Test {
         try
         {
             
-            generateProposalController.saveDocumentDetails( new List<sObject>());
+            generateProposalController.saveDocumentDetails( new List<sObject>(),opp.Id,'Mitchell Cotts Kenya','Proposal');
             
         }
         catch (Exception d)
@@ -249,16 +249,16 @@ private class GenerateProposalController_Test {
     
     @isTest
     private static void tessaveDocumentDetails_Pass(){
-        
+         Opportunity opp = generateOpportunity();
         List<sObject> docDetailsList = new List<sObject>();
         sObject docDetails = Schema.getGlobalDescribe().get('Proposal__c').newSObject() ;
+        Proposal__c prop = createProposal(opp.Id);
         
-        
-        docDetailsList.add(docDetails);
+        docDetailsList.add(prop);
         
         Test.startTest();
-        
-        system.assertEquals(1, generateProposalController.saveDocumentDetails(docDetailsList).size());
+        generateProposalController.saveDocumentDetails(docDetailsList,opp.Id,'Mitchell Cotts Kenya','Proposal');
+        //system.assertEquals(1, generateProposalController.saveDocumentDetails(docDetailsList,opp.Id,'Mitchell Cotts Kenya','Proposal').size());
         Test.stopTest();
         
         

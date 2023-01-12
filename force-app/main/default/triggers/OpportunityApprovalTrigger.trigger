@@ -38,8 +38,14 @@ trigger OpportunityApprovalTrigger on Opportunity (before update, after update) 
             }
             
             
-            else if (opp.StageName == 'SOP Sent'  && opp.StageName != Trigger.OldMap.get(opp.Id).StageName) {
+            else if (opp.StageName == 'Submit For Approval'  && opp.StageName != Trigger.OldMap.get(opp.Id).StageName) {
+                if (opp.Opportunity_Checklist_Approved__c) {
+                    opp.addError(' This Opportunity has already been verified and is now locked.To edit please contact the System Administrator.');
+                 return;
+                }                
+                
                 Approval.ProcessSubmitRequest req1 = new Approval.ProcessSubmitRequest();
+                
                 req1.setComments('This opportunity has been submitted for document checklist approval');
                 req1.setObjectId(opp.Id);
                 req1.setProcessDefinitionNameOrId('Opportunity_Checklist_Verify');
@@ -51,7 +57,8 @@ trigger OpportunityApprovalTrigger on Opportunity (before update, after update) 
             
             
             else if(opp.StageName == 'Closed Won'  && opp.StageName != Trigger.OldMap.get(opp.Id).StageName) {
-                Account Acc = [Select Id,Sync_Record_Data__c, Galaxy_Customer_Type__c, AWB_Prefix__c, Galaxy_Customer_Category__c, IATA_Code__c, Carrier_Code__c  FROM Account  where Id = :opp.AccountId];
+                Account Acc = [Select Id,Sync_Record_Data__c,Navision_Customer_ID__c, Galaxy_Customer_Type__c, AWB_Prefix__c, Galaxy_Customer_Category__c, IATA_Code__c, Carrier_Code__c  FROM Account  where Id = :opp.AccountId];
+                if ( Acc.Navision_Customer_ID__c == null){
                 Acc.Sync_Record_Data__c = true;
                 Acc.Galaxy_Customer_Type__c = opp.Galaxy_Customer_Type__c;
                 Acc.AWB_Prefix__c = opp.AWB_Prefix__c;
@@ -59,6 +66,15 @@ trigger OpportunityApprovalTrigger on Opportunity (before update, after update) 
                 Acc.IATA_Code__c  = opp.IATA_Code__c;
                 Acc.Carrier_Code__c = opp.Carrier_Code__c;
                 
+                
+                }
+                else{
+                    Acc.Galaxy_Customer_Type__c = opp.Galaxy_Customer_Type__c;
+                    Acc.AWB_Prefix__c = opp.AWB_Prefix__c;
+                    Acc.Galaxy_Customer_Category__c = opp.Galaxy_Customer_Category__c ;
+                    Acc.IATA_Code__c  = opp.IATA_Code__c;
+                    Acc.Carrier_Code__c = opp.Carrier_Code__c;
+                }
                 update Acc;
             }
             

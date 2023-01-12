@@ -11,24 +11,41 @@
     <aura:attribute name="oliFullList" type="OpportunityLineItem[]" />
     <aura:attribute name="serviceTypes" type="Product2[]" />
     <aura:attribute name="showSpinner" type="Boolean" default="false" />
+    <aura:attribute name="modal" type="Boolean" default="false" />
+    <aura:attribute name="pieces" type="String" />
+    <aura:attribute name="actualWeight" type="Integer" />
+    <aura:attribute name="airFreightLength" type="Integer" />
+    <aura:attribute name="airFreightWidth" type="Integer" />
+    <aura:attribute name="volWeight" type="Integer" />
+    <aura:attribute name="airFreightHeight" type="Integer" />
+    <aura:attribute name="chargableWeight" type="Integer" />
+    <aura:attribute name="actualTons" type="Integer" />
+    <aura:attribute name="seaFreightLength" type="Integer" />
+    <aura:attribute name="seaFreightWidth" type="Integer" />
+    <aura:attribute name="seaVol" type="Integer" />
+    <aura:attribute name="seaFreightHeight" type="Integer" />
+    <aura:attribute name="chargableTons" type="Integer" />
+       <aura:attribute name="units" type="String" />
     
     <aura:attribute name="allProducts" type="list"/>
     <aura:attribute name="pricebooks" type="list"/>
     <aura:attribute name="oliWrapperFullList" type="list"/>
     <aura:attribute name="oliWrapperPaginated" type="list"/>
     
-    <aura:attribute name="pageSize" type="Integer" default="5" />
+    <aura:attribute name="pageSize" type="Integer" default="10" />
     <aura:attribute name="totalSize" type="Integer"/>
     <aura:attribute name="start" type="Integer" />
     <aura:attribute name="end" type="Integer"/>
-    
-    
+    <aura:attribute name="oppProductMap" type="map"/>
+    <aura:attribute name="lineItemIndex" type="Integer"/>
+   
+    <aura:attribute name="volumeWeightOptions" type="list" default="[{'pieces':'','units':'','actualTons':'','weigth':'','length':'','width':'','height':''}]"/>
     
     <aura:attribute name="selectedPricebook" type="String"/>
     <aura:attribute name="record" type="Object"  description="The record object to be displayed"/>
     <force:recordData aura:id="recordLoader"
                       recordId="{!v.recordId}"
-                      fields="Id,AccountId,Name,CurrencyIsoCode,Pricebook2Id,StageName,Probability"
+                      fields="Id,AccountId,Name,CurrencyIsoCode,Pricebook2Id,StageName,Probability,Opportunity_Checklist_Approved__c,Tax_Rate__c"
                       targetFields="{!v.opportunityRecord}"
                       targetError="{!v.recordLoadError}"
                       layoutType="FULL"
@@ -37,18 +54,43 @@
     
     <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
     
+       
+    <div class="slds-page-header">
+        <div class="slds-grid">
+            <div class="slds-col slds-has-flexi-truncate">
+                <p class="slds-text-heading--label">Select Opportunity Products</p>
+                <div class="slds-grid">
+                    <div class="slds-grid slds-type-focus  ">
+                        <h1 class="slds-text-heading--medium slds-truncate" title="Open Orders">Select and add opportunty products to the opportunity</h1>
+                    </div>
+                </div>
+            </div>
+        </div> 
+    </div>
+    <br />
+    
+    <div class="slds-box slds-theme_shade slds-theme_alert-texture">
+        <div class="slds-box slds-theme_default">
+    
     
     
     <aura:if isTrue="{! v.showSpinner }">           
         <lightning:spinner alternativeText="Loading" />
     </aura:if>
     
-    <aura:if isTrue="{!or(v.opportunityRecord.StageName == 'Proposal Submitted For Approval',v.opportunityRecord.Price_Updated__c)}">
+    <aura:if isTrue="{!(v.opportunityRecord.StageName == 'Proposal Submitted For Approval'||v.opportunityRecord.Price_Updated__c||v.opportunityRecord.Opportunity_Checklist_Approved__c||v.opportunityRecord.Probability > '60')}">
+       
+        <aura:if isTrue="{!v.opportunityRecord.Opportunity_Checklist_Approved__c}">
+                  <ui:message title="Warning" severity="warning" closable="true">
+            This Opportunity has already been verified and is now locked.To edit please contact the System Administrator.
+        </ui:message>
         
+        <aura:set attribute="else">
         <ui:message title="Warning" severity="warning" closable="true">
             The Opportunity is locked and is awaiting approval.Please Contact Your Manager.
         </ui:message>
-        
+            </aura:set>
+        </aura:if>
         
         <aura:set attribute="else">
             
@@ -66,10 +108,10 @@
                             <col span="1" style="width: 15%;"/>
                             <col span="1" style="width: 10%;"/>
                             <col span="1" style="width: 10%;"/>
-                             <col span="1" style="width:17.5%;"/>
-                            <col span="1" style="width: 5%;"/>
-                            <col span="1" style="width: 5%;"/>
-                            <col span="1" style="width: 5%;"/>
+                             <col span="1" style="width:5%;"/>
+                            <col span="1" style="width: 10%;"/>
+                            <col span="1" style="width: 10%;"/>
+                            <col span="1" style="width: 3%;"/>
                             <col span="1" style="width: 5%;"/>
                             <col span="1" style="width: 10%;"/>
                            
@@ -125,7 +167,7 @@
                         <tbody  >
                             <aura:iteration  items="{!v.oliWrapperPaginated}" var="row"  indexVar="index" >
                                 
-                                <tr class="col-lg-12" >                          
+                                <tr class="col-lg-12" style="height:2px;" >                          
                                     <td scope="col">
                                         <div class="slds-truncate"> 
                                             <lightning:input type="checkbox" aura:id="checkbox" checked="{!row.isSelected}" />
@@ -152,8 +194,11 @@
                                         <div class="slds-truncate" > {!row.pbe.Product2.Description} </div>
                                     </td>
                                      <td scope="col"><div class="slds-truncate" >
-                                       <lightning:textarea placeholder="Enter service charge comments" value="{!row.oli.Description}"  />
-                                        </div>
+                                   <!--   <lightning:textarea placeholder="Enter service charge comments" value="{!row.oli.Description}"  /> -->
+                                      <!--   <aura:if isTrue = "{!(v.sline == 'Airfreight' || v.sline == 'Sea Freight')}">-->
+                                         <lightning:button iconName="utility:add"  name="{!index}" onclick="{!c.showModal}" title="add"/>
+                                     <!--    </aura:if> -->
+                                         </div>
                                     </td>
                                     <td scope="col">
                                         <div class="slds-truncate" >
@@ -166,7 +211,7 @@
                                         </div>
                                     </td>
                                     <td scope="col"><div class="slds-truncate" >
-                                        <lightning:input type="checkbox" aura:id="checkbox2" value="{!row.oli.VAT__c}" onchange="{!c.onCheckVat}" />
+                                        <lightning:input type="checkbox" aura:id="checkbox2" checked="{!row.oli.VAT__c}" onchange="{!c.onCheckVat}" />
                                         </div></td>
                                     <td scope="col"><div class="slds-truncate" >
                                         <lightning:input type="number" placeholder="0" value="{!row.oli.Quantity}"  />
@@ -264,6 +309,225 @@
                 </tr>                         
             </aura:iteration>
         </tbody>
+
     </table><br/>
+    <!-- This Modal will only be visible if showModal is set to true -->
+    <aura:if isTrue="{!v.modal}">
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal_medium" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <button class="slds-button slds-modal__close slds-button--icon-inverse" title="Close" onclick="{!c.closeModal}">
+                        X
+                        <span class="slds-assistive-text">Close</span>
+                    </button>
+                    <h2 id="modal-heading-01" class="slds-modal__title slds-hyphenate">Extra Information / Volume Calculation</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                    <div class="slds-grid slds-gutters">
+                        <div class="slds-col slds-size_1-of-1">
+                            <lightning:textarea placeholder="Enter service charge comments" value="{!v.oppProductMap.oli.Description}"  /> 
+                        </div>
+                    </div>
+                    <br />
+                    <aura:if isTrue = "{!or(v.sline == 'Airfreight',v.sline == 'Sea Freight')}">
+                        <div class="slds-grid slds-wrap">
+                            <!--<div class="slds-col slds-size_2-of-12">
+                                <aura:if isTrue = "{!v.sline == 'Airfreight'}">
+                                    <lightning:input type="number" value="{!v.pieces}"  label="Pieces" />
+                                </aura:if>
+                                <aura:if isTrue = "{!v.sline == 'Sea Freight'}">
+                                    <lightning:input type="number" value="{!v.units}"  label="Pieces" />
+                                </aura:if>
+                            </div>
+                            <div class="slds-col slds-size_2-of-12">
+                                <lightning:input type="number" value="{!v.actualWeight}"  label="Actual weight (kg)" />
+                            </div>
+                            <div class="slds-col slds-size_2-of-12">
+                                <lightning:input type="number"  value="{!v.airFreightLength}"  label="Length(cm)" />
+                            </div>
+                            <div class="slds-col slds-size_2-of-12">
+                                <lightning:input type="number"  value="{!v.airFreightWidth}"  label="Width(cm)" />
+                            </div>
+                            <div class="slds-col slds-size_2-of-12">
+                                <lightning:input type="number"  value="{!v.airFreightHeight}"  label="Height (cm)" />
+                            </div>
+                            <div class="slds-col slds-size_2-of-12">
+                                Vol weight
+                                <br /><lightning:formattedNumber value="{!(v.pieces*v.actualWeight*v.airFreightLength*v.airFreightWidth*v.airFreightHeight)/6000}" maximumFractionDigits="2"/>kg
+                            </div>-->
+                            <div class="slds-col slds-size_1-of-1">
+                                <table class="slds-table slds-max-medium-table--stacked  slds-table--col-bordered slds-table--bordered  slds-table--cell-buffer slds-table--striped" role="grid" style="width:100%;">
+                                    <thead>
+                                        <tr class="slds-line-height--reset">
+                                            <th scope="col" class="slds-text-title--caps">
+                                                <a href="javascript:void(0);" class="slds-th__action slds-text-link--reset" tabindex="-1">
+                                                    <aura:if isTrue = "{!v.sline == 'Airfreight'}">
+                                                        <span class="slds-truncate" title="Pieces">Pieces</span>
+                                                    </aura:if>
+                                                    <aura:if isTrue = "{!v.sline == 'Sea Freight'}">
+                                                        <span class="slds-truncate" title="Units">Units</span>
+                                                    </aura:if>
+                                                </a>
+                                            </th>
+                                            <th scope="col" class="slds-text-title--caps">
+                                                <a href="javascript:void(0);" class="slds-th__action slds-text-link--reset" tabindex="-1">
+                                                    <aura:if isTrue = "{!v.sline == 'Airfreight'}">
+                                                        <span class="slds-truncate" title="Actual Weight">Actual Weight(kg)</span>
+                                                    </aura:if>
+                                                    <aura:if isTrue = "{!v.sline == 'Sea Freight'}">
+                                                        <span class="slds-truncate" title="Actual Weight (tons)">Actual weight (tons)</span>
+                                                    </aura:if>
+                                                </a>
+                                            </th>
+                                            <th scope="col" class="slds-text-title--caps">
+                                                <a href="javascript:void(0);" class="slds-th__action slds-text-link--reset" tabindex="-1">
+                                                    <span class="slds-truncate" title="Length">Length(cm)</span>
+                                                </a>
+                                            </th>
+                                            <th scope="col" class="slds-text-title--caps">
+                                                <a href="javascript:void(0);" class="slds-th__action slds-text-link--reset" tabindex="-1">
+                                                    <span class="slds-truncate" title="Width">Width(cm)</span>
+                                                </a>
+                                            </th>
+                                            <th scope="col" class="slds-text-title--caps">
+                                                <a href="javascript:void(0);" class="slds-th__action slds-text-link--reset" tabindex="-1">
+                                                    <span class="slds-truncate" title="Height">Height(cm)</span>
+                                                </a>
+                                            </th>
+                                            <th scope="col" class="slds-text-title--caps">
+                                                <a href="javascript:void(0);" class="slds-th__action slds-text-link--reset" tabindex="-1">
+                                                    <span class="slds-truncate" title="Volume">Volume</span>
+                                                </a>
+                                            </th>
+                                            <th scope="col" class="slds-text-title--caps">
+                                                <a href="javascript:void(0);" class="slds-th__action slds-text-link--reset" tabindex="-1">
+                                                    <span class="slds-truncate" title="Action">Action</span>
+                                                </a>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <aura:iteration  items="{!v.volumeWeightOptions}" var="vol"  indexVar="index" >
+                                            <tr class="slds-hint-parent">
+                                                <td role="gridcell" >
+                                                    <span class="slds-grid slds-grid--align-spread">
+                                                        <aura:if isTrue = "{!v.sline == 'Airfreight'}">
+                                                            <span class="slds-truncate" title="Piece">
+                                                                <lightning:input type="number" value="{!vol.pieces}"  variant="label-hidden" />
+                                                            </span>
+                                                        </aura:if>
+                                                        <aura:if isTrue = "{!v.sline == 'Sea Freight'}">
+                                                            <span class="slds-truncate" title="Units">
+                                                                <lightning:input type="number" value="{!vol.units}"  variant="label-hidden" />
+                                                            </span>
+                                                        </aura:if>
+                                                    </span>
+                                                </td>
+                                                <td role="gridcell" >
+                                                    <span class="slds-grid slds-grid--align-spread">
+                                                        <aura:if isTrue = "{!v.sline == 'Airfreight'}">
+                                                            <span class="slds-truncate" title="weigth">
+                                                                <lightning:input type="number" value="{!vol.weigth}"  variant="label-hidden" />
+                                                            </span>
+                                                        </aura:if>
+                                                        <aura:if isTrue = "{!v.sline == 'Sea Freight'}">
+                                                            <span class="slds-truncate" title="Actual Tons">
+                                                                <lightning:input type="number" value="{!vol.actualTons}"  variant="label-hidden" />
+                                                            </span>
+                                                        </aura:if>
+                                                    </span>
+                                                </td>
+                                                <td role="gridcell" >
+                                                    <span class="slds-grid slds-grid--align-spread">
+                                                        <span class="slds-truncate" title="length">
+                                                            <lightning:input type="number" value="{!vol.length}"  variant="label-hidden" />
+                                                        </span>
+                                                    </span>
+                                                </td>
+                                                <td role="gridcell" >
+                                                    <span class="slds-grid slds-grid--align-spread">
+                                                        <span class="slds-truncate" title="width">
+                                                            <lightning:input type="number" value="{!vol.width}"  variant="label-hidden" />
+                                                        </span>
+                                                    </span>
+                                                </td>
+                                                <td role="gridcell" >
+                                                    <span class="slds-grid slds-grid--align-spread">
+                                                        <span class="slds-truncate" title="Height">
+                                                            <lightning:input type="number" value="{!vol.height}"  variant="label-hidden" />
+                                                        </span>
+                                                    </span>
+                                                </td>
+                                                <td role="gridcell" >
+                                                    <span class="slds-grid slds-grid--align-spread">
+                                                        <span class="slds-truncate" title="Piece">
+                                                            <aura:if isTrue = "{!v.sline == 'Airfreight'}">
+                                                                <lightning:formattedNumber value="{!(vol.pieces*vol.weigth*vol.length*vol.width*vol.height)/6000}" maximumFractionDigits="2"/>
+                                                            </aura:if>
+                                                            <aura:if isTrue = "{!v.sline == 'Sea Freight'}">
+                                                                <lightning:formattedNumber value="{!(vol.units*vol.actualTons*vol.length*vol.width*vol.height)/1000000}" maximumFractionDigits="2"/>
+                                                            </aura:if>
+                                                        </span>
+                                                    </span>
+                                                </td>
+                                                <td role="gridcell" >
+                                                    <span class="slds-grid slds-grid--align-spread">
+                                                        <span class="slds-truncate" title="Selected">
+                                                            <lightning:buttonIcon iconName="utility:add" variant="brand" alternativeText="Add" title="Add" onclick="{!c.addVolumeWeight}" />
+                                                        </span>
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        </aura:iteration>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <br />
+                        <div class="slds-grid slds-gutters">
+                            <div class="slds-col slds-size_1-of-1">
+                                <aura:if isTrue = "{!v.sline == 'Airfreight'}">
+                                    <lightning:button variant="brand" label="Calculate" onclick="{!c.airfreight}" />
+                                </aura:if>
+                                <aura:if isTrue = "{!v.sline == 'Sea Freight'}">
+                                    <lightning:button variant="brand" label="Calculate" onclick="{!c.seafreight}" />
+                                </aura:if>
+                            </div>
+                        </div>
+                        <div class="slds-grid slds-wrap">
+                            <aura:if isTrue = "{!v.sline == 'Airfreight'}">
+                                <aura:if isTrue = "{!not(empty(v.volWeight))}">
+                                    <div class="slds-col slds-size_1-of-1">
+                                        Vol weight: <lightning:formattedNumber value="{!v.volWeight}" maximumFractionDigits="2"/>kg
+                                    </div>
+                                    <div class="slds-col slds-size_1-of-1">
+                                        Chargable weight:<lightning:formattedNumber value="{!v.chargableWeight}" maximumFractionDigits="2"/>Kg
+                                    </div>
+                                </aura:if>
+                            </aura:if>
+                            <aura:if isTrue = "{!v.sline == 'Sea Freight'}">
+                                <aura:if isTrue = "{!not(empty(v.seaVol))}">
+                                    <div class="slds-col slds-size_1-of-1">
+                                        Volume (CBM): <lightning:formattedNumber value="{!v.seaVol}" maximumFractionDigits="2"/>kg
+                                    </div>
+                                    <div class="slds-col slds-size_1-of-1">
+                                        Chargable Volume / Tons:<lightning:formattedNumber value="{!v.chargableTons}" maximumFractionDigits="2"/>Kg
+                                    </div>
+                                </aura:if>
+                            </aura:if>
+                        </div>
+                    </aura:if>
+                </div>
+                <footer class="slds-modal__footer">
+                    <lightning:button variant="brand" label="Cancel" onclick="{!c.closeModal}" />
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop--open"></div>
+            
+    </aura:if>
+        </div>
+    </div>
     
+
 </aura:component>

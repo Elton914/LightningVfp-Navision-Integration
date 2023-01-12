@@ -121,17 +121,27 @@
         console.log(selectedProduct);
         console.log(JSON.stringify(selectedProduct)); */
             console.log(4);
+        var taxRate = component.get("v.opportunityRecord.Tax_Rate__c");
         var selectedProducts = [];
         var prodList = component.get("v.oliWrapperPaginated");
         console.log(1111);
+        console.log(prodList);
+        
         for(var x in prodList)
         {   
             console.log(x);
             console.log(prodList[x]);
-            
-            if(prodList[x].isSelected)
+            if(prodList[x])
             {
-                selectedProducts.push(prodList[x]);
+                if(prodList[x].isSelected)
+                {    
+                    if(prodList[x].oli.VAT__c ){
+                        prodList[x].oli.UnitPrice = ((taxRate / 100) + 1) * prodList[x].oli.UnitPrice;
+                        console.log(taxRate);
+                        console.log(prodList[x].UnitPrice);
+                    }
+                    selectedProducts.push(prodList[x]);
+                }
             }
         }
         
@@ -345,6 +355,122 @@
        component.set("v.showSpinner", false);
         //if you are on first page, disable previous and first
        
-    }
-
+    },
+    showModal: function(component, event, helper){
+        console.log(JSON.stringify(event.getSource().get("v.name")));
+        component.set("v.modal", true);
+        component.set("v.oppProductMap",{});
+        var oliList = component.get("v.oliWrapperPaginated");
+        var index =event.getSource().get("v.name");
+        component.set("v.oppProductMap",oliList[index]);
+        component.set("v.lineItemIndex",index)
+    },
+    
+    closeModal: function(component, event, helper){
+       var index=component.get("v.lineItemIndex");
+        var oliList = component.get("v.oliWrapperPaginated");
+       var oppProdMap=component.get("v.oppProductMap");
+        oliList[index]=oppProdMap;
+        component.set("v.oliWrapperPaginated",oliList)
+        component.set("v.modal", false);
+        
+    },
+   
+    airfreight: function(component, event, helper){
+        
+        var volWeight = component.get("v.volumeWeightOptions");
+        var TotalVolWeight = 0;
+        var totalWeight = 0;
+        
+        for(var x in volWeight)
+        {
+            var volumeWeight = (volWeight[x].pieces * volWeight[x].weigth * volWeight[x].length * volWeight[x].width * volWeight[x].height)/6000;
+            TotalVolWeight = parseFloat(TotalVolWeight) + parseFloat(volumeWeight);
+            totalWeight = (totalWeight) + parseFloat(volWeight[x].weigth);
+        }
+        component.set("v.volWeight",TotalVolWeight)
+        if (TotalVolWeight > totalWeight){
+            component.set("v.chargableWeight",TotalVolWeight);
+            component.set("v.oppProductMap.oli.Quantity",TotalVolWeight);
+        }
+        else{
+            console.log(totalWeight)
+            component.set("v.chargableWeight",totalWeight);
+            component.set("v.oppProductMap.oli.Quantity",totalWeight);
+        }
+        /*var pieces = component.get("v.pieces");
+        var weight = component.get("v.actualWeight");
+        var length = component.get("v.airFreightLength");
+        var width = component.get("v.airFreightWidth");
+        var height = component.get("v.airFreightHeight");
+        console.log(JSON.stringify(volWeight));
+        console.log(width)
+        console.log(length)
+         console.log(height)
+        console.log(pieces)
+         console.log(weight)
+        var volWeight= ((pieces*height*length*width)/6000);
+        component.set("v.volWeight",volWeight)
+        if (volWeight > weight){
+            component.set("v.chargableWeight",volWeight);
+            component.set("v.oppProductMap.oli.Quantity",volWeight)
+        }
+        else{
+            console.log(weight)
+            component.set("v.chargableWeight",weight)
+            component.set("v.oppProductMap.oli.Quantity",weight)
+        }*/
+        
+    },
+    seafreight: function(component, event, helper){
+        var volWeight = component.get("v.volumeWeightOptions");
+        var totalSeaVolume = 0;
+        var totalActualTon = 0;
+        for(var x in volWeight)
+        {
+            var seaVol = (volWeight[x].units * volWeight[x].actualTons * volWeight[x].length * volWeight[x].width * volWeight[x].height)/1000000;
+            totalSeaVolume = parseFloat(totalSeaVolume) + parseFloat(seaVol);
+            totalActualTon = parseFloat(totalActualTon) + parseFloat(volWeight[x].actualTons);
+        }
+        component.set("v.seaVol",totalSeaVolume)
+        if (totalSeaVolume > totalActualTon){
+            component.set("v.chargableTons",totalSeaVolume)
+            component.set("v.oppProductMap.oli.Quantity",totalSeaVolume)
+        }
+        else
+        {
+            console.log(totalActualTon)
+            component.set("v.chargableTons",totalActualTon);
+            component.set("v.oppProductMap.oli.Quantity",totalActualTon);
+        }                
+        /*var units = component.get("v.units");
+        var weight = component.get("v.actualTons");
+        var length = component.get("v.seaFreightLength");
+        var width = component.get("v.seaFreightWidth");
+        var height = component.get("v.seaFreightHeight");
+        console.log(width)
+        console.log(length)
+         console.log(height)
+        console.log(units)
+         console.log(weight)
+        var seaVol= ((units*height*length*width)/1000000);
+        component.set("v.seaVol",seaVol)
+        if (seaVol > weight){
+            component.set("v.chargableTons",seaVol)
+            component.set("v.oppProductMap.oli.Quantity",seaVol)
+        }
+        else{
+            console.log(weight)
+            component.set("v.chargableTons",weight)
+            component.set("v.oppProductMap.oli.Quantity",weight)
+        }*/
+        
+    },
+    addVolumeWeight : function(component, event, helper)
+    {
+        var volWeight = component.get("v.volumeWeightOptions");
+        var volObjct = {'pieces':'','weigth':'','length':'','width':'','height':''};
+        volWeight.push(volObjct);
+        component.set("v.volumeWeightOptions",volWeight);
+    },
 })

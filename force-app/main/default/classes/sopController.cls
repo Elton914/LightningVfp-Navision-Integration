@@ -1,8 +1,15 @@
-public class sopController {
-   public String letterhead{ get; set; }
+public class sopController
+{
     
     public sopController(ApexPages.StandardController controller ) {
-   letterhead= ApexPages.currentPage().getParameters().get('letterHeadValue');
-   system.debug(ApexPages.currentPage().getParameters().get('letterHeadValue'));
+        
+        
+        Id sopId =  ApexPages.currentPage().getParameters().get('ID');
+        
+        String myGeneratedFilename = [SELECT Id, Name from SOP__c where id = :sopId][0].Name;
+        Apexpages.currentPage().getHeaders().put('content-disposition', 'inline; filename='+myGeneratedFilename); 
+        
+        
     }
+    
 }

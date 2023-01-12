@@ -12,7 +12,6 @@ private class InvoiceTriggerHandler_TGN_TEST{
         drInvoice_c.Account__c = drAccount.Id;
         drInvoice_c.CustomerNo__c = '123123';
         drInvoice_c.No__c = '123123';
-        
         insert drInvoice_c;
         
         
@@ -63,7 +62,6 @@ private class InvoiceTriggerHandler_TGN_TEST{
         drAccount.Tax_Identification_Number__c = '123123123';
         drAccount.BillingPostalCode = '11111';
         drAccount.Navision_Customer_ID__c = '123123';
-        drAccount.Approval_Manager__c = System.UserInfo.getUserId();
         insert drAccount;
         
         return drAccount;

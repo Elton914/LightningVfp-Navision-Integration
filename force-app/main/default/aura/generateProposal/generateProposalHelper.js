@@ -212,6 +212,10 @@
             if(state === "SUCCESS"){
                 var allValues = response.getReturnValue();
                 console.log(allValues);
+                component.set("v.hideNextSaveDocument",false);
+                component.set("v.hideNextSaveRemarks",false);
+                
+                
                 var opportunityRecord = component.get("v.opportunityDetails");
                 for(var x in allValues)
                 {
@@ -281,15 +285,18 @@
         });
         $A.enqueueAction(action);
     },
-    createDocument : function(component,docDetails)
+    createDocument : function(component,docDetails,oppId, letterhead, typeDocument)
     {
         var typeDocument = component.get("v.typeDocument")
         var recordId = component.get("v.recordId"); 
         var action = component.get("c.saveDocumentDetails");
-        action.setParams({'docDetails':docDetails});
+        action.setParams({'docDetails':docDetails, 'oppId':oppId, 'letterhead':letterhead, 'typeDocument':typeDocument});
         action.setCallback(this, function(response){
             var state = response.getState();
             if(state === "SUCCESS"){
+                
+                   component.set("v.hideNextSaveDocument",true);
+                
                 var records = response.getReturnValue();
                 if(records.length > 0)
                 {
@@ -431,36 +438,27 @@
     saveAttachement : function(component,attach)
     {
         var recordId = component.get("v.recordId");
-        var docDetails = component.get("v.selectedDocDetails");
-        var typeDocument = component.get("v.typeDocument") ;
-        var letterhead = component.get("v.letterHeadValue");
-        var action = component.get("c.saveAttachmentDoc");
-        var opportunityRecord = component.get("v.opportunityRecord");
-        action.setParams({'sobjectId':docDetails.Id,"attType":"pdf","oppId":recordId,"selectedDocument":typeDocument,"letterheadOp":letterhead});
+         var typeDocument = component.get("v.typeDocument") ;
+         var action = component.get("c.saveAttachmentDoc");
+         action.setParams({ "oppId":recordId,"selectedDocument":typeDocument });
         action.setCallback(this, function(response){
             var state = response.getState();
             if(state === "SUCCESS")
             {
-                var records = response.getReturnValue();
+                var opp = response.getReturnValue();
                 this.alertActionStatus("Successful","Records created successfully","success");
-                if(attach)
-                {
-                    component.set("v.Attachments",records);
-                    component.set("v.isSendMail",true);
-                    component.set("v.selectedTab","Email");
-                }
-                console.log(records);
+                 
                 component.set("v.loadingSpinner",false);
                 console.log(111);
-                if(opportunityRecord.StageName == 'Prospecting'){
+                if(opp.StageName == 'Prospecting'){
                   this.submitApproval(component);
                  console.log(2222)
                 }
-                else if(opportunityRecord.Probability >= 0.4 && opportunityRecord.Price_Updated__c == true){
+                else if(opp.Probability >= 0.4 && opp.Price_Updated__c == true){
                    this.submitDiscountApproval(component);
                 }
                 
-            }
+     }
             else if(state === "ERROR") {
                 component.set("v.loadingSpinner",false);
                 var errors = response.getError();
